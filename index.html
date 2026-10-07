@@ -1,0 +1,2518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>DIWAKAR'S AIML TIMETABLE — Neo-Brutalist Weekly Planner</title>
+<meta name="description" content="A manga-inspired neo-brutalist weekly timetable and productivity tracker for AIML students.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Bebas+Neue&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================= */
+/* RESET & BASE                                  */
+/* ============================================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --paper: #EFE4D0;
+  --black: #111111;
+  --pink: #FF6CA8;
+  --yellow: #FFD84D;
+  --blue: #72A7FF;
+  --green: #7FE0C1;
+  --purple: #C792FF;
+  --orange: #FF9E79;
+  --red: #FF5E5E;
+  --border: 3px solid var(--black);
+  --border-thick: 4px solid var(--black);
+  --shadow: 4px 4px 0px var(--black);
+  --shadow-sm: 3px 3px 0px var(--black);
+  --font-hero: 'Anton', sans-serif;
+  --font-heading: 'Bebas Neue', sans-serif;
+  --font-sub: 'Archivo Black', sans-serif;
+  --font-body: 'Oswald', sans-serif;
+  --transition: all 0.15s ease;
+}
+
+/* Dark mode */
+body.dark-mode {
+  --paper: #181818;
+  --black: #EFE4D0;
+  --shadow: 4px 4px 0px #333333;
+  --shadow-sm: 3px 3px 0px #333333;
+}
+body.dark-mode { color: #EFE4D0; }
+body.dark-mode .day-panel { background: #202020 !important; }
+body.dark-mode .info-card { background: #202020 !important; }
+body.dark-mode .exam-row { background: #262626 !important; }
+body.dark-mode .subject-card { background: #262626 !important; }
+body.dark-mode .tracker-item { background: #262626 !important; }
+body.dark-mode .time-slot { background: #202020 !important; }
+body.dark-mode .nav-btn { background: #2a2a2a !important; color: #EFE4D0 !important; }
+body.dark-mode .nav-btn.active { color: #111111 !important; }
+body.dark-mode .collapse-header { background: #202020 !important; }
+body.dark-mode .bottom-section { background: #202020 !important; }
+body.dark-mode .hero-quote { background: #EFE4D0 !important; color: #111111 !important; }
+body.dark-mode .ver-badge { background: #202020 !important; color: #EFE4D0 !important; }
+
+html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--paper);
+  color: var(--black);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle vintage manga paper texture */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+}
+
+.page-wrapper {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 8px;
+}
+
+/* ============================================= */
+/* SVG ICONS (Vector replacements for emojis)     */
+/* ============================================= */
+.svg-icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+.svg-icon-sm { width: 14px; height: 14px; }
+.svg-icon-lg { width: 22px; height: 22px; }
+
+/* ============================================= */
+/* HEADER / HERO                                 */
+/* ============================================= */
+.hero {
+  border: var(--border-thick);
+  padding: 16px 14px;
+  position: relative;
+  background: var(--paper);
+  margin-bottom: 8px;
+}
+
+.hero-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.ver-badge {
+  background: var(--paper);
+  border: 2px solid var(--black);
+  padding: 2px 8px;
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.manga-smiley {
+  width: 26px;
+  height: 26px;
+  background: var(--yellow);
+  border: 2px solid var(--black);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-main {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.hero-title {
+  font-family: var(--font-hero);
+  font-size: clamp(2.2rem, 7vw, 3.2rem);
+  line-height: 0.92;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+}
+
+.hero-title .aiml {
+  color: var(--pink);
+  text-shadow: 2px 2px 0 var(--black);
+  -webkit-text-stroke: 1.5px var(--black);
+  display: inline-block;
+}
+
+.hero-subtitle {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-block;
+  background: var(--yellow);
+  color: var(--black);
+  padding: 2px 8px;
+  border: 2px solid var(--black);
+  box-shadow: 2px 2px 0 var(--black);
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.hero-side-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+/* Top-right interactive checklist */
+.hero-checklist {
+  background: var(--paper);
+  border: 2px solid var(--black);
+  padding: 6px 10px;
+  box-shadow: 2px 2px 0 var(--black);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.hero-check-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.hero-check-item input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--black);
+  cursor: pointer;
+  position: relative;
+  background: var(--paper);
+}
+.hero-check-item input[type="checkbox"]:checked {
+  background: var(--green);
+}
+.hero-check-item input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 1px; left: 4px;
+  width: 3px; height: 7px;
+  border: solid var(--black);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.hero-check-item.done span {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.hero-quote {
+  background: var(--black);
+  color: var(--paper);
+  padding: 6px 8px;
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  line-height: 1.4;
+  letter-spacing: 1px;
+  text-align: right;
+  border: 2px solid var(--black);
+  box-shadow: 2px 2px 0 var(--black);
+}
+
+.hustle-text {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  color: var(--black);
+  margin-top: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* ============================================= */
+/* LIVE INFO BAR                                 */
+/* ============================================= */
+.live-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: var(--border-thick);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.live-bar-item {
+  padding: 8px 6px;
+  text-align: center;
+  font-family: var(--font-heading);
+  border-right: var(--border);
+  background: var(--black);
+  color: var(--paper);
+}
+.live-bar-item:last-child { border-right: none; }
+
+.live-bar-item .label {
+  display: block;
+  font-size: 0.55rem;
+  opacity: 0.6;
+  font-family: var(--font-body);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.live-bar-item .value {
+  font-size: 1rem;
+  letter-spacing: 1px;
+}
+
+/* ============================================= */
+/* TOP INFO CARDS (Scrollable)                   */
+/* ============================================= */
+.info-cards-scroll {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  border: var(--border-thick);
+  margin-bottom: 8px;
+}
+.info-cards-scroll::-webkit-scrollbar { display: none; }
+
+.info-card {
+  min-width: 125px;
+  padding: 10px 12px;
+  text-align: center;
+  border-right: var(--border);
+  background: var(--paper);
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.info-card:last-child { border-right: none; }
+
+.info-card .card-icon {
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: center;
+}
+.info-card .card-title {
+  font-family: var(--font-sub);
+  font-size: 0.72rem;
+  margin-bottom: 2px;
+  letter-spacing: 0.5px;
+}
+.info-card .card-time {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  color: var(--pink);
+  letter-spacing: 0.5px;
+}
+.info-card .card-desc {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+
+/* ============================================= */
+/* DAY NAVIGATION BAR                            */
+/* ============================================= */
+.day-nav {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  border: var(--border-thick);
+  margin-bottom: 0;
+  background: var(--black);
+}
+.day-nav::-webkit-scrollbar { display: none; }
+
+.nav-btn {
+  flex: 1;
+  min-width: 48px;
+  padding: 10px 4px;
+  border: none;
+  border-right: 2px solid rgba(239,228,208,0.2);
+  background: var(--black);
+  color: var(--paper);
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+  position: relative;
+  white-space: nowrap;
+}
+.nav-btn:last-child { border-right: none; }
+
+.nav-btn .nav-short { display: none; }
+
+.nav-btn.active {
+  color: var(--black) !important;
+  font-weight: 700;
+}
+.nav-btn.active.holiday-day { background: var(--yellow) !important; }
+.nav-btn.active.college-day { background: var(--blue) !important; }
+.nav-btn.active.special-day { background: var(--purple) !important; }
+
+/* Today dot indicator */
+.nav-btn.today::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--pink);
+}
+
+.nav-btn:active { transform: scale(0.96); }
+
+@media (max-width: 420px) {
+  .nav-btn { padding: 9px 2px; font-size: 0.7rem; min-width: 40px; }
+  .nav-btn .nav-full { display: none; }
+  .nav-btn .nav-short { display: inline; }
+}
+
+/* ============================================= */
+/* TIMETABLE CONTAINER (Only selected day shown) */
+/* ============================================= */
+.day-container {
+  border: var(--border-thick);
+  border-top: none;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.day-panel {
+  display: none;
+  background: var(--paper);
+}
+.day-panel.active { display: block; animation: fadeIn 0.2s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.day-header {
+  padding: 10px 14px;
+  border-bottom: var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.day-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.day-name {
+  font-family: var(--font-sub);
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.day-type {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  padding: 2px 8px;
+  border: 2px solid var(--black);
+  font-weight: 700;
+}
+.day-type.holiday { background: var(--yellow); }
+.day-type.college { background: var(--blue); }
+.day-type.special { background: var(--purple); }
+
+.day-banner {
+  padding: 6px 14px;
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  text-align: center;
+  border-bottom: var(--border);
+  font-weight: 700;
+}
+.day-banner.yellow-bg { background: var(--yellow); color: var(--black); }
+.day-banner.blue-bg { background: var(--blue); color: var(--black); }
+.day-banner.purple-bg { background: var(--purple); color: var(--black); }
+
+/* TIME SLOT WITH CHECKBOX */
+.time-slot {
+  display: grid;
+  grid-template-columns: 36px 95px 1fr;
+  align-items: center;
+  gap: 0;
+  border-bottom: 1px solid rgba(17,17,17,0.12);
+  min-height: 44px;
+  transition: var(--transition);
+  background: var(--paper);
+}
+.time-slot:last-child { border-bottom: none; }
+.time-slot:active { background: rgba(17,17,17,0.04); }
+
+/* Interactive Checkbox in slot */
+.slot-check-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+  cursor: pointer;
+}
+
+.slot-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--black);
+  cursor: pointer;
+  position: relative;
+  background: var(--paper);
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.slot-checkbox:checked {
+  background: var(--green);
+}
+.slot-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 5px;
+  width: 4px; height: 8px;
+  border: solid var(--black);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.time-slot .time {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+  padding: 8px 8px;
+  border-right: 1px solid rgba(17,17,17,0.12);
+  border-left: 1px solid rgba(17,17,17,0.12);
+  display: flex;
+  align-items: center;
+  height: 100%;
+  background: rgba(17,17,17,0.03);
+  white-space: nowrap;
+}
+
+.time-slot .activity {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.8rem;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.time-slot.completed {
+  background: rgba(17,17,17,0.03);
+}
+.time-slot.completed .activity,
+.time-slot.completed .activity-text,
+.time-slot.completed .activity-sub {
+  text-decoration: line-through !important;
+  opacity: 0.45;
+}
+.time-slot.completed .time {
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+
+.time-slot .activity-sub {
+  font-size: 0.65rem;
+  opacity: 0.6;
+  margin-left: 4px;
+}
+
+/* Highlight ongoing slot */
+.time-slot.current-slot {
+  background: rgba(255,108,168,0.15) !important;
+  border-left: 4px solid var(--pink);
+}
+.time-slot.current-slot .time {
+  font-weight: 700;
+  color: var(--pink);
+}
+
+/* ============================================= */
+/* EXAM SECTION (MST-2 EXAM WEEK)                */
+/* ============================================= */
+.exam-section {
+  border: var(--border-thick);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.exam-header {
+  padding: 10px 14px;
+  background: var(--black);
+  color: var(--paper);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.exam-header-left {
+  display: flex;
+  flex-direction: column;
+}
+.exam-header-title {
+  font-family: var(--font-sub);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.exam-header-sub {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  opacity: 0.7;
+}
+.exam-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.exam-header-time {
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  color: var(--pink);
+  letter-spacing: 1px;
+  text-align: right;
+}
+.exam-clear-toggle {
+  background: var(--paper);
+  color: var(--black);
+  border: 2px solid var(--black);
+  padding: 2px 8px;
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--black);
+  font-weight: 700;
+  transition: var(--transition);
+}
+.exam-clear-toggle:active {
+  transform: scale(0.95);
+}
+.exam-status-badge {
+  font-family: var(--font-heading);
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  background: var(--green);
+  color: var(--black);
+  padding: 1px 6px;
+  border: 1px solid var(--black);
+  font-weight: 700;
+  margin-left: 6px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.exam-section.hide-cleared .exam-row.completed {
+  display: none !important;
+}
+.all-exams-banner {
+  padding: 10px 14px;
+  background: var(--green);
+  color: var(--black);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  letter-spacing: 1.5px;
+  text-align: center;
+  font-weight: 700;
+  border-top: var(--border);
+}
+
+.exam-row {
+  display: grid;
+  grid-template-columns: 36px auto 1fr auto;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 2px solid rgba(17,17,17,0.1);
+  align-items: center;
+  background: var(--paper);
+}
+.exam-row:last-child { border-bottom: none; }
+
+.exam-row.completed .exam-subject,
+.exam-row.completed .exam-code {
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+
+.exam-date-badge {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  background: var(--black);
+  color: var(--paper);
+  padding: 3px 8px;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.exam-subject {
+  font-family: var(--font-sub);
+  font-size: 0.8rem;
+}
+
+.exam-code {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  opacity: 0.55;
+  text-align: right;
+}
+
+/* ============================================= */
+/* COLLAPSIBLE SECTIONS (Daily Goals, Focus, Notes)*/
+/* ============================================= */
+.collapse-section {
+  border: var(--border-thick);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.collapse-header {
+  padding: 10px 14px;
+  font-family: var(--font-sub);
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  border-bottom: var(--border);
+  background: var(--paper);
+  -webkit-user-select: none;
+  user-select: none;
+}
+.collapse-header:active { background: rgba(17,17,17,0.05); }
+
+.collapse-header .arrow-icon {
+  transition: transform 0.25s ease;
+}
+.collapse-header.open .arrow-icon { transform: rotate(180deg); }
+
+.collapse-body {
+  display: none;
+}
+.collapse-body.open { display: block; }
+
+/* DAILY GOALS ITEMS */
+.tracker-item {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(17,17,17,0.1);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--paper);
+  -webkit-user-select: none;
+  user-select: none;
+}
+.tracker-item:last-child { border-bottom: none; }
+.tracker-item:active { background: rgba(17,17,17,0.04); }
+
+.tracker-item .tracker-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--black);
+  cursor: pointer;
+  position: relative;
+  background: var(--paper);
+}
+.tracker-item .tracker-checkbox:checked {
+  background: var(--green);
+}
+.tracker-item .tracker-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 5px;
+  width: 5px; height: 9px;
+  border: solid var(--black);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.tracker-item.completed label {
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+
+/* SUBJECT FOCUS */
+.subject-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(17,17,17,0.1);
+}
+.subject-card:last-child { border-bottom: none; }
+
+.subject-badge {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border: 2px solid var(--black);
+  letter-spacing: 1px;
+  text-align: center;
+  min-width: 55px;
+  font-weight: 700;
+}
+
+.subject-desc {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+}
+
+/* IMPORTANT NOTES */
+.note-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 14px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+.note-dot {
+  width: 5px; height: 5px;
+  background: var(--black);
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+/* ============================================= */
+/* PROGRESS SYSTEM                               */
+/* ============================================= */
+.progress-section {
+  border: var(--border-thick);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: var(--paper);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-sub);
+  font-size: 0.75rem;
+  margin-bottom: 6px;
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 20px;
+  border: 2px solid var(--black);
+  background: rgba(17,17,17,0.06);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--green),
+    var(--green) 6px,
+    #5ecfa8 6px,
+    #5ecfa8 12px
+  );
+  transition: width 0.4s ease;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stat-box {
+  text-align: center;
+  padding: 6px 4px;
+  border: 2px solid var(--black);
+  box-shadow: 2px 2px 0 var(--black);
+}
+.stat-value {
+  font-family: var(--font-hero);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+.stat-label {
+  font-family: var(--font-heading);
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  margin-top: 2px;
+}
+.stat-box.pct { background: var(--pink); }
+.stat-box.streak { background: var(--yellow); }
+.stat-box.weekly { background: var(--blue); }
+
+/* ============================================= */
+/* TOOLS BUTTONS                                 */
+/* ============================================= */
+.tools-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: var(--border-thick);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.tool-btn {
+  padding: 10px 8px;
+  border: none;
+  background: var(--black);
+  color: var(--paper);
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-transform: uppercase;
+  border-right: 2px solid rgba(239,228,208,0.15);
+  border-bottom: 2px solid rgba(239,228,208,0.15);
+  transition: var(--transition);
+}
+.tool-btn:nth-child(2n) { border-right: none; }
+.tool-btn:nth-child(n+3) { border-bottom: none; }
+.tool-btn:active { opacity: 0.8; transform: scale(0.97); }
+
+.tool-btn.dark-toggle { background: var(--purple); color: var(--black); }
+
+/* ============================================= */
+/* FOOTER                                        */
+/* ============================================= */
+.footer {
+  border: var(--border-thick);
+  padding: 12px;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  background: var(--black);
+  color: var(--paper);
+  margin-bottom: 8px;
+}
+.footer-hustle {
+  font-family: var(--font-hero);
+  font-size: 1.15rem;
+  color: var(--yellow);
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* Grunge strip */
+.grunge-strip {
+  height: 24px;
+  background: var(--black);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 8px;
+  border: var(--border);
+}
+.grunge-strip::before {
+  content: 'DIWAKAR * AIML * DISCIPLINE * CODE * BUILD * GROW * DIWAKAR * AIML * DISCIPLINE * CODE * BUILD * GROW *';
+  position: absolute;
+  white-space: nowrap;
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  color: var(--paper);
+  top: 50%;
+  transform: translateY(-50%);
+  animation: marquee 22s linear infinite;
+}
+@keyframes marquee {
+  0% { transform: translateY(-50%) translateX(0); }
+  100% { transform: translateY(-50%) translateX(-50%); }
+}
+
+@media print {
+  body::before { display: none; }
+  .tools-grid, .progress-section, .day-nav { display: none; }
+  .day-panel { display: block !important; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- ============================================= -->
+  <!-- HEADER / HERO (Pure vector & typography)      -->
+  <!-- ============================================= -->
+  <header class="hero">
+    <div class="hero-top-row">
+      <div class="ver-badge">
+        <svg class="svg-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        VER 01
+      </div>
+      <div class="manga-smiley" title="Manga Smiley">
+        <!-- SVG Manga Smiley with X eyes -->
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <line x1="6" y1="8" x2="10" y2="12" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="10" y1="8" x2="6" y2="12" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="14" y1="8" x2="18" y2="12" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="18" y1="8" x2="14" y2="12" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M7 16 Q12 20 17 16" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="hero-main">
+      <div>
+        <h1 class="hero-title">
+          DIWAKAR'S<br>
+          <span class="aiml">AIML</span> TIMETABLE
+        </h1>
+        <div class="hero-subtitle">
+          <span class="badge">DISCIPLINE TODAY &gt; BIGGER TOMORROW</span>
+        </div>
+        <div class="hustle-text">
+          SAME HUSTLE DIFFERENT LEVEL
+        </div>
+      </div>
+
+      <div class="hero-side-box">
+        <!-- Interactive Checkboxes (Study, Code, Build, Grow) -->
+        <div class="hero-checklist" id="heroChecklist">
+          <label class="hero-check-item" id="item-study">
+            <input type="checkbox" data-hero="study">
+            <span>Study</span>
+          </label>
+          <label class="hero-check-item" id="item-code">
+            <input type="checkbox" data-hero="code">
+            <span>Code</span>
+          </label>
+          <label class="hero-check-item" id="item-build">
+            <input type="checkbox" data-hero="build">
+            <span>Build</span>
+          </label>
+          <label class="hero-check-item" id="item-grow">
+            <input type="checkbox" data-hero="grow">
+            <span>Grow</span>
+          </label>
+        </div>
+
+        <div class="hero-quote">
+          GOOD CODE<br>
+          GOOD GRADES<br>
+          GOOD PHYSIQUE<br>
+          BETTER LIFE
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================= -->
+  <!-- LIVE INFO BAR                                 -->
+  <!-- ============================================= -->
+  <div class="live-bar">
+    <div class="live-bar-item">
+      <span class="label">DATE</span>
+      <span class="value" id="liveDate">—</span>
+    </div>
+    <div class="live-bar-item">
+      <span class="label">TIME</span>
+      <span class="value" id="liveTime">—</span>
+    </div>
+    <div class="live-bar-item">
+      <span class="label">DAY</span>
+      <span class="value" id="liveDay">—</span>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- TOP 6 INFO CARDS (Matching image precisely)   -->
+  <!-- ============================================= -->
+  <div class="info-cards-scroll">
+    <!-- 1. GYM -->
+    <div class="info-card">
+      <div class="card-icon">
+        <svg class="svg-icon-lg" viewBox="0 0 24 24"><path d="M2 10h2v4H2zm3-2h2v8H5zm14 0h2v8h-2zm3 2h2v4h-2zM7 11h10v2H7z"/></svg>
+      </div>
+      <div class="card-title">GYM</div>
+      <div class="card-time">5:00 - 8:00</div>
+      <div class="card-desc">Stay Fit</div>
+    </div>
+
+    <!-- 2. CODING -->
+    <div class="info-card">
+      <div class="card-icon">
+        <svg class="svg-icon-lg" viewBox="0 0 24 24"><path d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
+      </div>
+      <div class="card-title">CODING</div>
+      <div class="card-time">DSA + Development</div>
+      <div class="card-desc">LeetCode / HackerRank</div>
+    </div>
+
+    <!-- 3. MACHINE LEARNING -->
+    <div class="info-card">
+      <div class="card-icon">
+        <svg class="svg-icon-lg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+      </div>
+      <div class="card-title">MACHINE LEARNING</div>
+      <div class="card-time">Learn + Practice</div>
+      <div class="card-desc">Projects</div>
+    </div>
+
+    <!-- 4. COLLEGE -->
+    <div class="info-card">
+      <div class="card-icon">
+        <svg class="svg-icon-lg" viewBox="0 0 24 24"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+      </div>
+      <div class="card-title">COLLEGE</div>
+      <div class="card-time">9:30 - 4:35</div>
+      <div class="card-desc">(Wed - Sun)</div>
+    </div>
+
+    <!-- 5. EXAM PREP -->
+    <div class="info-card">
+      <div class="card-icon">
+        <svg class="svg-icon-lg" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+      </div>
+      <div class="card-title">EXAM PREP</div>
+      <div class="card-time">MST-2</div>
+      <div class="card-desc">7 - 17 Oct</div>
+    </div>
+
+    <!-- 6. PERSONAL -->
+    <div class="info-card">
+      <div class="card-icon">
+        <svg class="svg-icon-lg" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+      </div>
+      <div class="card-title">PERSONAL</div>
+      <div class="card-time">Food - Rest</div>
+      <div class="card-desc">Travel - Growth</div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- DAY SELECTOR TABS                             -->
+  <!-- ============================================= -->
+  <div class="day-nav" id="dayNav">
+    <button class="nav-btn holiday-day" data-day="monday" id="nav-monday">
+      <span class="nav-full">MON</span><span class="nav-short">M</span>
+    </button>
+    <button class="nav-btn holiday-day" data-day="tuesday" id="nav-tuesday">
+      <span class="nav-full">TUE</span><span class="nav-short">T</span>
+    </button>
+    <button class="nav-btn college-day" data-day="wednesday" id="nav-wednesday">
+      <span class="nav-full">WED</span><span class="nav-short">W</span>
+    </button>
+    <button class="nav-btn college-day" data-day="thursday" id="nav-thursday">
+      <span class="nav-full">THU</span><span class="nav-short">T</span>
+    </button>
+    <button class="nav-btn college-day" data-day="friday" id="nav-friday">
+      <span class="nav-full">FRI</span><span class="nav-short">F</span>
+    </button>
+    <button class="nav-btn college-day" data-day="saturday" id="nav-saturday">
+      <span class="nav-full">SAT</span><span class="nav-short">S</span>
+    </button>
+    <button class="nav-btn college-day" data-day="sunday" id="nav-sunday">
+      <span class="nav-full">SUN</span><span class="nav-short">S</span>
+    </button>
+    <button class="nav-btn special-day" data-day="special" id="nav-special">
+      <span class="nav-full">20 OCT</span><span class="nav-short">SP</span>
+    </button>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- DAY-WISE TIMETABLE (WITH CHECKBOX ON EACH SLOT)-->
+  <!-- ============================================= -->
+  <div class="day-container" id="dayContainer">
+
+    <!-- ================= MONDAY ================= -->
+    <div class="day-panel" id="day-monday">
+      <div class="day-header" style="background:var(--yellow);">
+        <div class="day-title-group">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M2 10h2v4H2zm3-2h2v8H5zm14 0h2v8h-2zm3 2h2v4h-2zM7 11h10v2H7z"/></svg>
+          <div class="day-name">MONDAY</div>
+        </div>
+        <span class="day-type holiday">HOLIDAY</span>
+      </div>
+      <div class="day-banner yellow-bg">MON RESET - LEARN - BUILD - GROW</div>
+      <div class="day-body">
+        <div class="time-slot" data-slot="mon-1" data-start="5" data-end="8">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-1"></div>
+          <div class="time">5:00 - 8:00</div>
+          <div class="activity"><span class="activity-text">Gym</span></div>
+        </div>
+        <div class="time-slot" data-slot="mon-2" data-start="8" data-end="9">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-2"></div>
+          <div class="time">8:00 - 9:00</div>
+          <div class="activity"><span class="activity-text">Breakfast</span></div>
+        </div>
+        <div class="time-slot" data-slot="mon-3" data-start="9" data-end="11">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-3"></div>
+          <div class="time">9:00 - 11:00</div>
+          <div class="activity"><span class="activity-text">Deep Work</span><span class="activity-sub">(Coding / DSA)</span></div>
+        </div>
+        <div class="time-slot" data-slot="mon-4" data-start="11" data-end="13">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-4"></div>
+          <div class="time">11:00 - 1:00</div>
+          <div class="activity"><span class="activity-text">Machine Learning</span><span class="activity-sub">(Concepts / Projects)</span></div>
+        </div>
+        <div class="time-slot" data-slot="mon-5" data-start="13" data-end="14">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-5"></div>
+          <div class="time">1:00 - 2:00</div>
+          <div class="activity"><span class="activity-text">Lunch + Rest</span></div>
+        </div>
+        <div class="time-slot" data-slot="mon-6" data-start="14" data-end="16">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-6"></div>
+          <div class="time">2:00 - 4:00</div>
+          <div class="activity"><span class="activity-text">Java / DSA</span></div>
+        </div>
+        <div class="time-slot" data-slot="mon-7" data-start="16" data-end="17">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-7"></div>
+          <div class="time">4:00 - 5:00</div>
+          <div class="activity"><span class="activity-text">Personal / Chores</span></div>
+        </div>
+        <div class="time-slot" data-slot="mon-8" data-start="17" data-end="19">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-8"></div>
+          <div class="time">5:00 - 7:00</div>
+          <div class="activity"><span class="activity-text">Project / Web Dev</span></div>
+        </div>
+        <div class="time-slot" data-slot="mon-9" data-start="19" data-end="20">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-9"></div>
+          <div class="time">7:00 - 8:00</div>
+          <div class="activity"><span class="activity-text">Dinner</span></div>
+        </div>
+        <div class="time-slot" data-slot="mon-10" data-start="20" data-end="21.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-10"></div>
+          <div class="time">8:00 - 9:30</div>
+          <div class="activity"><span class="activity-text">ML Project / Research</span></div>
+        </div>
+        <div class="time-slot" data-slot="mon-11" data-start="21.5" data-end="22">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-11"></div>
+          <div class="time">9:30 - 10:00</div>
+          <div class="activity"><span class="activity-text">Plan Next Day</span></div>
+        </div>
+        <div class="time-slot" data-slot="mon-12" data-start="22" data-end="24">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="mon-12"></div>
+          <div class="time">10:00+</div>
+          <div class="activity"><span class="activity-text">Sleep</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TUESDAY ================= -->
+    <div class="day-panel" id="day-tuesday">
+      <div class="day-header" style="background:var(--orange);">
+        <div class="day-title-group">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
+          <div class="day-name">TUESDAY</div>
+        </div>
+        <span class="day-type holiday">HOLIDAY</span>
+      </div>
+      <div class="day-banner" style="background:var(--orange);color:var(--black);">MORE CODE - LESS SCROLL</div>
+      <div class="day-body">
+        <div class="time-slot" data-slot="tue-1" data-start="5" data-end="8">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-1"></div>
+          <div class="time">5:00 - 8:00</div>
+          <div class="activity"><span class="activity-text">Gym</span></div>
+        </div>
+        <div class="time-slot" data-slot="tue-2" data-start="8" data-end="9">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-2"></div>
+          <div class="time">8:00 - 9:00</div>
+          <div class="activity"><span class="activity-text">Breakfast</span></div>
+        </div>
+        <div class="time-slot" data-slot="tue-3" data-start="9" data-end="11">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-3"></div>
+          <div class="time">9:00 - 11:00</div>
+          <div class="activity"><span class="activity-text">Machine Learning</span><span class="activity-sub">(Course / Concepts)</span></div>
+        </div>
+        <div class="time-slot" data-slot="tue-4" data-start="11" data-end="13">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-4"></div>
+          <div class="time">11:00 - 1:00</div>
+          <div class="activity"><span class="activity-text">Java + DSA Practice</span></div>
+        </div>
+        <div class="time-slot" data-slot="tue-5" data-start="13" data-end="14">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-5"></div>
+          <div class="time">1:00 - 2:00</div>
+          <div class="activity"><span class="activity-text">Lunch + Rest</span></div>
+        </div>
+        <div class="time-slot" data-slot="tue-6" data-start="14" data-end="16">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-6"></div>
+          <div class="time">2:00 - 4:00</div>
+          <div class="activity"><span class="activity-text">Coding Projects</span><span class="activity-sub">(Web Dev / Personal)</span></div>
+        </div>
+        <div class="time-slot" data-slot="tue-7" data-start="16" data-end="17">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-7"></div>
+          <div class="time">4:00 - 5:00</div>
+          <div class="activity"><span class="activity-text">Break / Walk</span></div>
+        </div>
+        <div class="time-slot" data-slot="tue-8" data-start="17" data-end="19">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-8"></div>
+          <div class="time">5:00 - 7:00</div>
+          <div class="activity"><span class="activity-text">LeetCode / HackerRank</span></div>
+        </div>
+        <div class="time-slot" data-slot="tue-9" data-start="19" data-end="20">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-9"></div>
+          <div class="time">7:00 - 8:00</div>
+          <div class="activity"><span class="activity-text">Dinner</span></div>
+        </div>
+        <div class="time-slot" data-slot="tue-10" data-start="20" data-end="21.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-10"></div>
+          <div class="time">8:00 - 9:30</div>
+          <div class="activity"><span class="activity-text">College Subject Revision</span></div>
+        </div>
+        <div class="time-slot" data-slot="tue-11" data-start="21.5" data-end="22">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-11"></div>
+          <div class="time">9:30 - 10:00</div>
+          <div class="activity"><span class="activity-text">Plan Next Day</span></div>
+        </div>
+        <div class="time-slot" data-slot="tue-12" data-start="22" data-end="24">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="tue-12"></div>
+          <div class="time">10:00+</div>
+          <div class="activity"><span class="activity-text">Sleep</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= WEDNESDAY ================= -->
+    <div class="day-panel" id="day-wednesday">
+      <div class="day-header" style="background:var(--pink);">
+        <div class="day-title-group">
+          <div class="manga-smiley" style="width:20px;height:20px;">
+            <svg width="12" height="12" viewBox="0 0 24 24"><path d="M7 14 Q12 18 17 14" stroke="#111" stroke-width="3" fill="none"/></svg>
+          </div>
+          <div class="day-name">WEDNESDAY</div>
+        </div>
+        <span class="day-type college">COLLEGE DAY</span>
+      </div>
+      <div class="day-body">
+        <div class="time-slot" data-slot="wed-1" data-start="5" data-end="8">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="wed-1"></div>
+          <div class="time">5:00 - 8:00</div>
+          <div class="activity"><span class="activity-text">Gym</span></div>
+        </div>
+        <div class="time-slot" data-slot="wed-2" data-start="8" data-end="9.25">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="wed-2"></div>
+          <div class="time">8:00 - 9:15</div>
+          <div class="activity"><span class="activity-text">Shower + Breakfast</span></div>
+        </div>
+        <div class="time-slot" data-slot="wed-3" data-start="9.5" data-end="16.58">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="wed-3"></div>
+          <div class="time">9:30 - 4:35</div>
+          <div class="activity"><span class="activity-text">College</span><span class="activity-sub">(Classes + Notes)</span></div>
+        </div>
+        <div class="time-slot" data-slot="wed-4" data-start="16.58" data-end="17.25">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="wed-4"></div>
+          <div class="time">4:35 - 5:15</div>
+          <div class="activity"><span class="activity-text">Travel + Rest</span></div>
+        </div>
+        <div class="time-slot" data-slot="wed-5" data-start="17.25" data-end="18.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="wed-5"></div>
+          <div class="time">5:15 - 6:30</div>
+          <div class="activity"><span class="activity-text">Coding Practice</span><span class="activity-sub">(LeetCode / HR)</span></div>
+        </div>
+        <div class="time-slot" data-slot="wed-6" data-start="18.5" data-end="19.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="wed-6"></div>
+          <div class="time">6:30 - 7:30</div>
+          <div class="activity"><span class="activity-text">Java</span><span class="activity-sub">(Concepts)</span></div>
+        </div>
+        <div class="time-slot" data-slot="wed-7" data-start="19.5" data-end="20">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="wed-7"></div>
+          <div class="time">7:30 - 8:00</div>
+          <div class="activity"><span class="activity-text">Dinner</span></div>
+        </div>
+        <div class="time-slot" data-slot="wed-8" data-start="20" data-end="21.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="wed-8"></div>
+          <div class="time">8:00 - 9:30</div>
+          <div class="activity"><span class="activity-text">Machine Learning</span><span class="activity-sub">(Theory / Project)</span></div>
+        </div>
+        <div class="time-slot" data-slot="wed-9" data-start="21.5" data-end="22">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="wed-9"></div>
+          <div class="time">9:30 - 10:00</div>
+          <div class="activity"><span class="activity-text">Plan Next Day</span></div>
+        </div>
+        <div class="time-slot" data-slot="wed-10" data-start="22" data-end="24">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="wed-10"></div>
+          <div class="time">10:00+</div>
+          <div class="activity"><span class="activity-text">Sleep</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= THURSDAY ================= -->
+    <div class="day-panel" id="day-thursday">
+      <div class="day-header" style="background:var(--yellow);">
+        <div class="day-title-group">
+          <!-- Manga 4-point star SVG -->
+          <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9"/></svg>
+          <div class="day-name">THURSDAY</div>
+        </div>
+        <span class="day-type college">COLLEGE DAY</span>
+      </div>
+      <div class="day-body">
+        <div class="time-slot" data-slot="thu-1" data-start="5" data-end="8">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="thu-1"></div>
+          <div class="time">5:00 - 8:00</div>
+          <div class="activity"><span class="activity-text">Gym</span></div>
+        </div>
+        <div class="time-slot" data-slot="thu-2" data-start="8" data-end="9.25">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="thu-2"></div>
+          <div class="time">8:00 - 9:15</div>
+          <div class="activity"><span class="activity-text">Shower + Breakfast</span></div>
+        </div>
+        <div class="time-slot" data-slot="thu-3" data-start="9.5" data-end="16.58">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="thu-3"></div>
+          <div class="time">9:30 - 4:35</div>
+          <div class="activity"><span class="activity-text">College</span><span class="activity-sub">(Classes + Notes)</span></div>
+        </div>
+        <div class="time-slot" data-slot="thu-4" data-start="16.58" data-end="17.25">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="thu-4"></div>
+          <div class="time">4:35 - 5:15</div>
+          <div class="activity"><span class="activity-text">Travel + Rest</span></div>
+        </div>
+        <div class="time-slot" data-slot="thu-5" data-start="17.25" data-end="18.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="thu-5"></div>
+          <div class="time">5:15 - 6:30</div>
+          <div class="activity"><span class="activity-text">Coding Practice</span><span class="activity-sub">(LeetCode / HR)</span></div>
+        </div>
+        <div class="time-slot" data-slot="thu-6" data-start="18.5" data-end="19.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="thu-6"></div>
+          <div class="time">6:30 - 7:30</div>
+          <div class="activity"><span class="activity-text">DSA / Problem Solving</span></div>
+        </div>
+        <div class="time-slot" data-slot="thu-7" data-start="19.5" data-end="20">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="thu-7"></div>
+          <div class="time">7:30 - 8:00</div>
+          <div class="activity"><span class="activity-text">Dinner</span></div>
+        </div>
+        <div class="time-slot" data-slot="thu-8" data-start="20" data-end="21.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="thu-8"></div>
+          <div class="time">8:00 - 9:30</div>
+          <div class="activity"><span class="activity-text">Machine Learning</span><span class="activity-sub">(Course / Practice)</span></div>
+        </div>
+        <div class="time-slot" data-slot="thu-9" data-start="21.5" data-end="22">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="thu-9"></div>
+          <div class="time">9:30 - 10:00</div>
+          <div class="activity"><span class="activity-text">Plan Next Day</span></div>
+        </div>
+        <div class="time-slot" data-slot="thu-10" data-start="22" data-end="24">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="thu-10"></div>
+          <div class="time">10:00+</div>
+          <div class="activity"><span class="activity-text">Sleep</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= FRIDAY ================= -->
+    <div class="day-panel" id="day-friday">
+      <div class="day-header" style="background:var(--blue);">
+        <div class="day-title-group">
+          <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9"/></svg>
+          <div class="day-name">FRIDAY</div>
+        </div>
+        <span class="day-type college">COLLEGE DAY</span>
+      </div>
+      <div class="day-body">
+        <div class="time-slot" data-slot="fri-1" data-start="5" data-end="8">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="fri-1"></div>
+          <div class="time">5:00 - 8:00</div>
+          <div class="activity"><span class="activity-text">Gym</span></div>
+        </div>
+        <div class="time-slot" data-slot="fri-2" data-start="8" data-end="9.25">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="fri-2"></div>
+          <div class="time">8:00 - 9:15</div>
+          <div class="activity"><span class="activity-text">Shower + Breakfast</span></div>
+        </div>
+        <div class="time-slot" data-slot="fri-3" data-start="9.5" data-end="16.58">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="fri-3"></div>
+          <div class="time">9:30 - 4:35</div>
+          <div class="activity"><span class="activity-text">College</span><span class="activity-sub">(Classes + Notes)</span></div>
+        </div>
+        <div class="time-slot" data-slot="fri-4" data-start="16.58" data-end="17.25">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="fri-4"></div>
+          <div class="time">4:35 - 5:15</div>
+          <div class="activity"><span class="activity-text">Travel + Rest</span></div>
+        </div>
+        <div class="time-slot" data-slot="fri-5" data-start="17.25" data-end="18.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="fri-5"></div>
+          <div class="time">5:15 - 6:30</div>
+          <div class="activity"><span class="activity-text">Coding Practice</span><span class="activity-sub">(LeetCode / HR)</span></div>
+        </div>
+        <div class="time-slot" data-slot="fri-6" data-start="18.5" data-end="19.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="fri-6"></div>
+          <div class="time">6:30 - 7:30</div>
+          <div class="activity"><span class="activity-text">Machine Learning</span><span class="activity-sub">(Project Work)</span></div>
+        </div>
+        <div class="time-slot" data-slot="fri-7" data-start="19.5" data-end="20">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="fri-7"></div>
+          <div class="time">7:30 - 8:00</div>
+          <div class="activity"><span class="activity-text">Dinner</span></div>
+        </div>
+        <div class="time-slot" data-slot="fri-8" data-start="20" data-end="21.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="fri-8"></div>
+          <div class="time">8:00 - 9:30</div>
+          <div class="activity"><span class="activity-text">Web / Development</span><span class="activity-sub">(Project / Skills)</span></div>
+        </div>
+        <div class="time-slot" data-slot="fri-9" data-start="21.5" data-end="22">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="fri-9"></div>
+          <div class="time">9:30 - 10:00</div>
+          <div class="activity"><span class="activity-text">Plan Next Day</span></div>
+        </div>
+        <div class="time-slot" data-slot="fri-10" data-start="22" data-end="24">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="fri-10"></div>
+          <div class="time">10:00+</div>
+          <div class="activity"><span class="activity-text">Sleep</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SATURDAY ================= -->
+    <div class="day-panel" id="day-saturday">
+      <div class="day-header" style="background:var(--green);">
+        <div class="day-title-group">
+          <!-- Clover/Book SVG -->
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+          <div class="day-name">SATURDAY</div>
+        </div>
+        <span class="day-type college">COLLEGE DAY</span>
+      </div>
+      <div class="day-body">
+        <div class="time-slot" data-slot="sat-1" data-start="5" data-end="8">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sat-1"></div>
+          <div class="time">5:00 - 8:00</div>
+          <div class="activity"><span class="activity-text">Gym</span></div>
+        </div>
+        <div class="time-slot" data-slot="sat-2" data-start="8" data-end="9.25">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sat-2"></div>
+          <div class="time">8:00 - 9:15</div>
+          <div class="activity"><span class="activity-text">Shower + Breakfast</span></div>
+        </div>
+        <div class="time-slot" data-slot="sat-3" data-start="9.5" data-end="16.58">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sat-3"></div>
+          <div class="time">9:30 - 4:35</div>
+          <div class="activity"><span class="activity-text">College</span><span class="activity-sub">(Classes + Notes)</span></div>
+        </div>
+        <div class="time-slot" data-slot="sat-4" data-start="16.58" data-end="17.25">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sat-4"></div>
+          <div class="time">4:35 - 5:15</div>
+          <div class="activity"><span class="activity-text">Travel + Rest</span></div>
+        </div>
+        <div class="time-slot" data-slot="sat-5" data-start="17.25" data-end="18.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sat-5"></div>
+          <div class="time">5:15 - 6:30</div>
+          <div class="activity"><span class="activity-text">Coding Practice</span><span class="activity-sub">(LeetCode / HR)</span></div>
+        </div>
+        <div class="time-slot" data-slot="sat-6" data-start="18.5" data-end="19.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sat-6"></div>
+          <div class="time">6:30 - 7:30</div>
+          <div class="activity"><span class="activity-text">Machine Learning</span><span class="activity-sub">(Revision / PYQs)</span></div>
+        </div>
+        <div class="time-slot" data-slot="sat-7" data-start="19.5" data-end="20">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sat-7"></div>
+          <div class="time">7:30 - 8:00</div>
+          <div class="activity"><span class="activity-text">Dinner</span></div>
+        </div>
+        <div class="time-slot" data-slot="sat-8" data-start="20" data-end="21.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sat-8"></div>
+          <div class="time">8:00 - 9:30</div>
+          <div class="activity"><span class="activity-text">Java / Development</span><span class="activity-sub">(Practice + Qs)</span></div>
+        </div>
+        <div class="time-slot" data-slot="sat-9" data-start="21.5" data-end="22">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sat-9"></div>
+          <div class="time">9:30 - 10:00</div>
+          <div class="activity"><span class="activity-text">Plan Next Day</span></div>
+        </div>
+        <div class="time-slot" data-slot="sat-10" data-start="22" data-end="24">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sat-10"></div>
+          <div class="time">10:00+</div>
+          <div class="activity"><span class="activity-text">Sleep</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SUNDAY ================= -->
+    <div class="day-panel" id="day-sunday">
+      <div class="day-header" style="background:var(--red);">
+        <div class="day-title-group">
+          <!-- Lightning SVG -->
+          <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="7,2 17,2 12,11 17,11 8,22 10,13 5,13"/></svg>
+          <div class="day-name">SUNDAY</div>
+        </div>
+        <span class="day-type college">COLLEGE DAY</span>
+      </div>
+      <div class="day-body">
+        <div class="time-slot" data-slot="sun-1" data-start="5" data-end="8">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sun-1"></div>
+          <div class="time">5:00 - 8:00</div>
+          <div class="activity"><span class="activity-text">Gym</span></div>
+        </div>
+        <div class="time-slot" data-slot="sun-2" data-start="8" data-end="9.25">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sun-2"></div>
+          <div class="time">8:00 - 9:15</div>
+          <div class="activity"><span class="activity-text">Shower + Breakfast</span></div>
+        </div>
+        <div class="time-slot" data-slot="sun-3" data-start="9.5" data-end="16.58">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sun-3"></div>
+          <div class="time">9:30 - 4:35</div>
+          <div class="activity"><span class="activity-text">College</span><span class="activity-sub">(Classes + Notes)</span></div>
+        </div>
+        <div class="time-slot" data-slot="sun-4" data-start="16.58" data-end="17.25">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sun-4"></div>
+          <div class="time">4:35 - 5:15</div>
+          <div class="activity"><span class="activity-text">Travel + Rest</span></div>
+        </div>
+        <div class="time-slot" data-slot="sun-5" data-start="17.25" data-end="18.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sun-5"></div>
+          <div class="time">5:15 - 6:30</div>
+          <div class="activity"><span class="activity-text">Coding Practice</span><span class="activity-sub">(LeetCode / HR)</span></div>
+        </div>
+        <div class="time-slot" data-slot="sun-6" data-start="18.5" data-end="19.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sun-6"></div>
+          <div class="time">6:30 - 7:30</div>
+          <div class="activity"><span class="activity-text">Machine Learning</span><span class="activity-sub">(Concepts / Projects)</span></div>
+        </div>
+        <div class="time-slot" data-slot="sun-7" data-start="19.5" data-end="20">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sun-7"></div>
+          <div class="time">7:30 - 8:00</div>
+          <div class="activity"><span class="activity-text">Dinner</span></div>
+        </div>
+        <div class="time-slot" data-slot="sun-8" data-start="20" data-end="21.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sun-8"></div>
+          <div class="time">8:00 - 9:30</div>
+          <div class="activity"><span class="activity-text">Revision</span><span class="activity-sub">(College Subjects)</span></div>
+        </div>
+        <div class="time-slot" data-slot="sun-9" data-start="21.5" data-end="22">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sun-9"></div>
+          <div class="time">9:30 - 10:00</div>
+          <div class="activity"><span class="activity-text">Plan Next Day</span></div>
+        </div>
+        <div class="time-slot" data-slot="sun-10" data-start="22" data-end="24">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sun-10"></div>
+          <div class="time">10:00+</div>
+          <div class="activity"><span class="activity-text">Sleep</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SPECIAL (WORKING TUESDAY 20 OCT) ================= -->
+    <div class="day-panel" id="day-special">
+      <div class="day-header" style="background:var(--purple);">
+        <div class="day-title-group">
+          <!-- Lightning SVG -->
+          <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="7,2 17,2 12,11 17,11 8,22 10,13 5,13"/></svg>
+          <div class="day-name">TUESDAY 20 OCT</div>
+        </div>
+        <span class="day-type special">WORKING TUESDAY</span>
+      </div>
+      <div class="day-body">
+        <div class="time-slot" data-slot="sp-1" data-start="5" data-end="8">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sp-1"></div>
+          <div class="time">5:00 - 8:00</div>
+          <div class="activity"><span class="activity-text">Gym</span></div>
+        </div>
+        <div class="time-slot" data-slot="sp-2" data-start="8" data-end="9">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sp-2"></div>
+          <div class="time">8:00 - 9:00</div>
+          <div class="activity"><span class="activity-text">Shower + Breakfast</span></div>
+        </div>
+        <div class="time-slot" data-slot="sp-3" data-start="9.5" data-end="16.58">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sp-3"></div>
+          <div class="time">9:30 - 4:35</div>
+          <div class="activity"><span class="activity-text" style="font-weight:700;">College</span><span class="activity-sub">(Extra Class)</span></div>
+        </div>
+        <div class="time-slot" data-slot="sp-4" data-start="16.58" data-end="17.25">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sp-4"></div>
+          <div class="time">4:35 - 5:15</div>
+          <div class="activity"><span class="activity-text">Travel + Rest</span></div>
+        </div>
+        <div class="time-slot" data-slot="sp-5" data-start="17.25" data-end="18.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sp-5"></div>
+          <div class="time">5:15 - 6:30</div>
+          <div class="activity"><span class="activity-text">Coding Practice</span><span class="activity-sub">(LeetCode / HR)</span></div>
+        </div>
+        <div class="time-slot" data-slot="sp-6" data-start="18.5" data-end="19.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sp-6"></div>
+          <div class="time">6:30 - 7:30</div>
+          <div class="activity"><span class="activity-text">Machine Learning</span><span class="activity-sub">(Revision / Project)</span></div>
+        </div>
+        <div class="time-slot" data-slot="sp-7" data-start="19.5" data-end="20">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sp-7"></div>
+          <div class="time">7:30 - 8:00</div>
+          <div class="activity"><span class="activity-text">Dinner</span></div>
+        </div>
+        <div class="time-slot" data-slot="sp-8" data-start="20" data-end="21.5">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sp-8"></div>
+          <div class="time">8:00 - 9:30</div>
+          <div class="activity"><span class="activity-text">Java / Development</span></div>
+        </div>
+        <div class="time-slot" data-slot="sp-9" data-start="21.5" data-end="22">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sp-9"></div>
+          <div class="time">9:30 - 10:00</div>
+          <div class="activity"><span class="activity-text">Plan Next Day</span></div>
+        </div>
+        <div class="time-slot" data-slot="sp-10" data-start="22" data-end="24">
+          <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-slotid="sp-10"></div>
+          <div class="time">10:00+</div>
+          <div class="activity"><span class="activity-text">Sleep</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================= -->
+  <!-- EXAM PANEL (MST-2 EXAM WEEK)                  -->
+  <!-- ============================================= -->
+  <div class="exam-section">
+    <div class="exam-header">
+      <div class="exam-header-left">
+        <div class="exam-header-title">
+          <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+          MST-2 EXAM WEEK
+        </div>
+        <div class="exam-header-sub">7 OCT - 17 OCT 2026</div>
+      </div>
+      <div class="exam-header-right">
+        <div class="exam-header-time">2:00 PM - 3:30 PM</div>
+        <button class="exam-clear-toggle" id="btnToggleCleared" onclick="toggleHideCleared()">HIDE CLEARED</button>
+      </div>
+    </div>
+
+    <!-- 12 OCT: DM -->
+    <div class="exam-row" data-exam="dm">
+      <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-examid="dm"></div>
+      <div class="exam-date-badge"><span class="dot" style="background:var(--pink);"></span> 12 OCT</div>
+      <div class="exam-subject">DM</div>
+      <div class="exam-code">CSE201</div>
+    </div>
+
+    <!-- 13 OCT: IOPS -->
+    <div class="exam-row" data-exam="iops">
+      <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-examid="iops"></div>
+      <div class="exam-date-badge"><span class="dot" style="background:var(--blue);"></span> 13 OCT</div>
+      <div class="exam-subject">IOPS</div>
+      <div class="exam-code">USS202</div>
+    </div>
+
+    <!-- 14 OCT: DSA -->
+    <div class="exam-row" data-exam="dsa">
+      <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-examid="dsa"></div>
+      <div class="exam-date-badge"><span class="dot" style="background:var(--green);"></span> 14 OCT</div>
+      <div class="exam-subject">DSA</div>
+      <div class="exam-code">UCS201</div>
+    </div>
+
+    <!-- 15 OCT: OOPS USING JAVA -->
+    <div class="exam-row" data-exam="oops">
+      <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-examid="oops"></div>
+      <div class="exam-date-badge"><span class="dot" style="background:var(--yellow);"></span> 15 OCT</div>
+      <div class="exam-subject">OOPS USING JAVA</div>
+      <div class="exam-code">UCS202-CSE</div>
+    </div>
+
+    <!-- 16 OCT: SS -->
+    <div class="exam-row" data-exam="ss">
+      <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-examid="ss"></div>
+      <div class="exam-date-badge"><span class="dot" style="background:var(--purple);"></span> 16 OCT</div>
+      <div class="exam-subject">SS</div>
+      <div class="exam-code">USS101</div>
+    </div>
+
+    <!-- 17 OCT: DLD -->
+    <div class="exam-row" data-exam="dld">
+      <div class="slot-check-wrap"><input type="checkbox" class="slot-checkbox" data-examid="dld"></div>
+      <div class="exam-date-badge"><span class="dot" style="background:var(--pink);"></span> 17 OCT</div>
+      <div class="exam-subject">DLD</div>
+      <div class="exam-code">CSE202</div>
+    </div>
+
+    <!-- All Exams Cleared Banner (Auto-shown when all exams are past) -->
+    <div class="all-exams-banner" id="allExamsClearedBanner" style="display:none;">
+      ★ ALL MST-2 EXAMS OVER &amp; CLEARED ★
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- DAILY GOALS (Interactive Checkbox Tracker)    -->
+  <!-- ============================================= -->
+  <div class="collapse-section">
+    <div class="collapse-header open" data-target="trackerBody" onclick="toggleCollapse(this)">
+      <span style="display:flex;align-items:center;gap:6px;">
+        <!-- Bullseye/Target SVG -->
+        <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10 10-4.49 10-10S17.51 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3-8c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"/></svg>
+        DAILY GOALS
+      </span>
+      <svg class="svg-icon-sm arrow-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+    </div>
+    <div class="collapse-body open" id="trackerBody">
+      <!-- 8 goals populated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- PROGRESS SYSTEM                               -->
+  <!-- ============================================= -->
+  <div class="progress-section" id="progressSection">
+    <div class="progress-header">
+      <span>TODAY'S COMPLETION</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box pct">
+        <div class="stat-value" id="completionStat">0%</div>
+        <div class="stat-label">COMPLETED</div>
+      </div>
+      <div class="stat-box streak">
+        <div class="stat-value" id="streakStat">0</div>
+        <div class="stat-label">DAY STREAK</div>
+      </div>
+      <div class="stat-box weekly">
+        <div class="stat-value" id="weeklyStat">0/7</div>
+        <div class="stat-label">WEEKLY</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- SUBJECT FOCUS (COLLEGE)                       -->
+  <!-- ============================================= -->
+  <div class="collapse-section">
+    <div class="collapse-header" data-target="subjectBody" onclick="toggleCollapse(this)">
+      <span style="display:flex;align-items:center;gap:6px;">
+        <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        SUBJECT FOCUS (COLLEGE)
+      </span>
+      <svg class="svg-icon-sm arrow-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+    </div>
+    <div class="collapse-body" id="subjectBody">
+      <div class="subject-card">
+        <div class="subject-badge" style="background:var(--pink);">DM</div>
+        <div class="subject-desc">Formulas + PYQs + Numericals</div>
+      </div>
+      <div class="subject-card">
+        <div class="subject-badge" style="background:var(--blue);">IOPS</div>
+        <div class="subject-desc">Concepts + Solve Questions</div>
+      </div>
+      <div class="subject-card">
+        <div class="subject-badge" style="background:var(--green);">DSA</div>
+        <div class="subject-desc">Practice Problems + Important Topics</div>
+      </div>
+      <div class="subject-card">
+        <div class="subject-badge" style="background:var(--yellow);">OOPS (Java)</div>
+        <div class="subject-desc">Core Concepts + Programs</div>
+      </div>
+      <div class="subject-card">
+        <div class="subject-badge" style="background:var(--purple);">SS</div>
+        <div class="subject-desc">Theory + Notes + PYQs</div>
+      </div>
+      <div class="subject-card">
+        <div class="subject-badge" style="background:var(--orange);">DLD</div>
+        <div class="subject-desc">Concepts + Numericals</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- IMPORTANT NOTES                               -->
+  <!-- ============================================= -->
+  <div class="collapse-section">
+    <div class="collapse-header" data-target="notesBody" onclick="toggleCollapse(this)">
+      <span style="display:flex;align-items:center;gap:6px;">
+        <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M16 9V4l1 1V2H7v3l1-1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/></svg>
+        IMPORTANT NOTES
+      </span>
+      <svg class="svg-icon-sm arrow-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+    </div>
+    <div class="collapse-body" id="notesBody">
+      <div class="note-item"><div class="note-dot"></div><span>Gym timing fixed: 5:00 - 8:00 AM (daily)</span></div>
+      <div class="note-item"><div class="note-dot"></div><span>College: Wed - Sun (9:30 AM - 4:35 PM)</span></div>
+      <div class="note-item"><div class="note-dot"></div><span>Mon & Tue: Holiday (except Tue 20 Oct - college)</span></div>
+      <div class="note-item"><div class="note-dot"></div><span>MST-2 Exams: 12 Oct - 17 Oct (2:00 PM - 3:30 PM)</span></div>
+      <div class="note-item"><div class="note-dot"></div><span>Use breaks wisely, avoid social media distractions.</span></div>
+      <div class="note-item"><div class="note-dot"></div><span>Maintain proper diet, hydration and sleep.</span></div>
+      <div class="note-item"><div class="note-dot"></div><span>Keep one notebook for Java/DSA, one for ML, one for college subjects.</span></div>
+      <div class="note-item"><div class="note-dot"></div><span>Focus on consistent progress, not perfection.</span></div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- TOOLS                                         -->
+  <!-- ============================================= -->
+  <div class="tools-grid">
+    <button class="tool-btn" onclick="window.print()">
+      <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+      PRINT
+    </button>
+    <button class="tool-btn" onclick="exportPDF()">
+      <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5z"/></svg>
+      EXPORT PDF
+    </button>
+    <button class="tool-btn" onclick="resetWeek()">
+      <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      RESET WEEK
+    </button>
+    <button class="tool-btn dark-toggle" id="btnDark" onclick="toggleDark()">
+      <svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+      DARK MODE
+    </button>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- FOOTER                                        -->
+  <!-- ============================================= -->
+  <div class="grunge-strip"></div>
+  <footer class="footer">
+    <span class="footer-hustle">SAME HUSTLE DIFFERENT LEVEL</span>
+    DIWAKAR * AIML TIMETABLE * VER 01
+  </footer>
+</div>
+
+<script>
+// ============================================= //
+// LIVE CLOCK                                    //
+// ============================================= //
+function updateClock() {
+  const now = new Date();
+  const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  document.getElementById('liveDate').textContent = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+  document.getElementById('liveTime').textContent = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true }).toUpperCase();
+  document.getElementById('liveDay').textContent = days[now.getDay()];
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ============================================= //
+// DAY NAVIGATION (Only shows selected day)      //
+// ============================================= //
+const dayMap = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+const allDayIds = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','special'];
+
+function switchDay(dayId) {
+  // Hide all panels
+  document.querySelectorAll('.day-panel').forEach(p => p.classList.remove('active'));
+  // Deactivate all nav buttons
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+  // Show selected panel
+  const panel = document.getElementById('day-' + dayId);
+  if (panel) panel.classList.add('active');
+
+  // Activate selected nav button
+  const btn = document.getElementById('nav-' + dayId);
+  if (btn) btn.classList.add('active');
+
+  localStorage.setItem('selectedDay', dayId);
+  highlightCurrentSlot(dayId);
+  updateProgress();
+}
+
+// Nav buttons click
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchDay(btn.dataset.day));
+});
+
+// Auto-select today on launch
+function initDaySelection() {
+  const now = new Date();
+  const todayKey = dayMap[now.getDay()];
+
+  // Mark today's button with pink indicator
+  const todayBtn = document.getElementById('nav-' + todayKey);
+  if (todayBtn) todayBtn.classList.add('today');
+
+  const saved = localStorage.getItem('selectedDay');
+  switchDay(saved || todayKey);
+}
+
+// ============================================= //
+// HIGHLIGHT ONGOING TIME SLOT                   //
+// ============================================= //
+function highlightCurrentSlot(dayId) {
+  const now = new Date();
+  const todayKey = dayMap[now.getDay()];
+  const currentHour = now.getHours() + now.getMinutes() / 60;
+
+  // Clear previous
+  document.querySelectorAll('.time-slot.current-slot').forEach(s => s.classList.remove('current-slot'));
+
+  // Only highlight if viewing today
+  if (dayId !== todayKey) return;
+
+  const panel = document.getElementById('day-' + dayId);
+  if (!panel) return;
+
+  const slots = panel.querySelectorAll('.time-slot[data-start]');
+  slots.forEach(slot => {
+    const start = parseFloat(slot.dataset.start);
+    const end = parseFloat(slot.dataset.end);
+    if (currentHour >= start && currentHour < end) {
+      slot.classList.add('current-slot');
+    }
+  });
+}
+setInterval(() => {
+  const active = document.querySelector('.day-panel.active');
+  if (active) highlightCurrentSlot(active.id.replace('day-', ''));
+}, 60000);
+
+// ============================================= //
+// DATE KEY HELPER                               //
+// ============================================= //
+function getTodayDateKey() {
+  const now = new Date();
+  return `date_${now.getFullYear()}_${now.getMonth()}_${now.getDate()}`;
+}
+
+// ============================================= //
+// TIMETABLE SLOT CHECKBOXES                     //
+// ============================================= //
+function loadSlotCheckboxes() {
+  const dateKey = getTodayDateKey();
+  const savedSlots = JSON.parse(localStorage.getItem(`slots_${dateKey}`) || '{}');
+
+  document.querySelectorAll('.time-slot').forEach(slot => {
+    const chk = slot.querySelector('.slot-checkbox');
+    if (!chk) return;
+    const slotId = chk.dataset.slotid;
+    const isChecked = !!savedSlots[slotId];
+    chk.checked = isChecked;
+    slot.classList.toggle('completed', isChecked);
+  });
+}
+
+function handleSlotToggle(chk, slot) {
+  const dateKey = getTodayDateKey();
+  const slotId = chk.dataset.slotid;
+  const current = JSON.parse(localStorage.getItem(`slots_${dateKey}`) || '{}');
+  current[slotId] = chk.checked;
+  localStorage.setItem(`slots_${dateKey}`, JSON.stringify(current));
+
+  if (slot) slot.classList.toggle('completed', chk.checked);
+  updateProgress();
+}
+
+// Delegated listener on dayContainer for bulletproof toggle & no desync
+const dayContainerEl = document.getElementById('dayContainer');
+if (dayContainerEl) {
+  dayContainerEl.addEventListener('click', (e) => {
+    const slot = e.target.closest('.time-slot');
+    if (!slot) return;
+    const chk = slot.querySelector('.slot-checkbox');
+    if (!chk) return;
+
+    if (e.target === chk) {
+      // Direct checkbox click - handled by change event below
+      return;
+    }
+
+    // Clicked anywhere else on row (time, activity, wrapper)
+    e.preventDefault();
+    chk.checked = !chk.checked;
+    handleSlotToggle(chk, slot);
+  });
+
+  dayContainerEl.addEventListener('change', (e) => {
+    if (e.target.classList.contains('slot-checkbox')) {
+      const slot = e.target.closest('.time-slot');
+      handleSlotToggle(e.target, slot);
+    }
+  });
+}
+
+// ============================================= //
+// EXAM SCHEDULE & AUTO-CLEAR SYSTEM             //
+// ============================================= //
+const examSchedule = [
+  { id: 'dm', name: 'DM', dateStr: '12 OCT', year: 2026, month: 9, day: 12, hour: 15, minute: 30 },
+  { id: 'iops', name: 'IOPS', dateStr: '13 OCT', year: 2026, month: 9, day: 13, hour: 15, minute: 30 },
+  { id: 'dsa', name: 'DSA', dateStr: '14 OCT', year: 2026, month: 9, day: 14, hour: 15, minute: 30 },
+  { id: 'oops', name: 'OOPS USING JAVA', dateStr: '15 OCT', year: 2026, month: 9, day: 15, hour: 15, minute: 30 },
+  { id: 'ss', name: 'SS', dateStr: '16 OCT', year: 2026, month: 9, day: 16, hour: 15, minute: 30 },
+  { id: 'dld', name: 'DLD', dateStr: '17 OCT', year: 2026, month: 9, day: 17, hour: 15, minute: 30 }
+];
+
+function checkAutoClearExams() {
+  const now = new Date();
+  const savedExams = JSON.parse(localStorage.getItem('exams_done') || '{}');
+  let changed = false;
+  let allOver = true;
+  let clearedCount = 0;
+
+  examSchedule.forEach(exam => {
+    const examEnd = new Date(exam.year, exam.month, exam.day, exam.hour, exam.minute);
+    const isOver = now >= examEnd;
+
+    if (!isOver) {
+      allOver = false;
+    }
+
+    // Automatically clear when exam time is past
+    if (isOver && !savedExams[exam.id]) {
+      savedExams[exam.id] = true;
+      changed = true;
+    }
+
+    if (savedExams[exam.id] || isOver) {
+      clearedCount++;
+    }
+  });
+
+  if (changed) {
+    localStorage.setItem('exams_done', JSON.stringify(savedExams));
+  }
+
+  // Update UI for each exam row
+  document.querySelectorAll('.exam-row').forEach(row => {
+    const chk = row.querySelector('.slot-checkbox');
+    if (!chk) return;
+    const examId = chk.dataset.examid;
+    const isChecked = !!savedExams[examId];
+    chk.checked = isChecked;
+    row.classList.toggle('completed', isChecked);
+    row.classList.toggle('exam-cleared', isChecked);
+
+    // Add or remove CLEARED status badge
+    let badge = row.querySelector('.exam-status-badge');
+    if (isChecked) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'exam-status-badge';
+        badge.textContent = 'CLEARED';
+        const subj = row.querySelector('.exam-subject');
+        if (subj) subj.appendChild(badge);
+      }
+    } else if (badge) {
+      badge.remove();
+    }
+  });
+
+  // Check if all exams over banner
+  const banner = document.getElementById('allExamsClearedBanner');
+  if (banner) {
+    banner.style.display = (allOver || clearedCount === examSchedule.length) ? 'block' : 'none';
+  }
+
+  // Update toggle button text if hiding cleared
+  updateHideClearedBtn(clearedCount);
+}
+
+function toggleHideCleared() {
+  const examSec = document.querySelector('.exam-section');
+  if (!examSec) return;
+  const isHidden = examSec.classList.toggle('hide-cleared');
+  localStorage.setItem('hideClearedExams', isHidden);
+  checkAutoClearExams();
+}
+
+function updateHideClearedBtn(clearedCount) {
+  const btn = document.getElementById('btnToggleCleared');
+  const examSec = document.querySelector('.exam-section');
+  if (!btn || !examSec) return;
+  const isHidden = examSec.classList.contains('hide-cleared');
+  btn.textContent = isHidden ? `SHOW CLEARED (${clearedCount})` : 'HIDE CLEARED';
+}
+
+function loadExamCheckboxes() {
+  const isHidden = localStorage.getItem('hideClearedExams') === 'true';
+  const examSec = document.querySelector('.exam-section');
+  if (examSec && isHidden) examSec.classList.add('hide-cleared');
+  checkAutoClearExams();
+}
+
+const examSectionEl = document.querySelector('.exam-section');
+if (examSectionEl) {
+  examSectionEl.addEventListener('click', (e) => {
+    const row = e.target.closest('.exam-row');
+    if (!row) return;
+    const chk = row.querySelector('.slot-checkbox');
+    if (!chk) return;
+    if (e.target === chk) return;
+
+    e.preventDefault();
+    chk.checked = !chk.checked;
+    handleExamToggle(chk, row);
+  });
+
+  examSectionEl.addEventListener('change', (e) => {
+    if (e.target.dataset.examid) {
+      const row = e.target.closest('.exam-row');
+      handleExamToggle(e.target, row);
+    }
+  });
+}
+
+function handleExamToggle(chk, row) {
+  const examId = chk.dataset.examid;
+  const current = JSON.parse(localStorage.getItem('exams_done') || '{}');
+  current[examId] = chk.checked;
+  localStorage.setItem('exams_done', JSON.stringify(current));
+  if (row) {
+    row.classList.toggle('completed', chk.checked);
+    row.classList.toggle('exam-cleared', chk.checked);
+  }
+  checkAutoClearExams();
+}
+
+// Auto-check exam status every 30 seconds
+setInterval(checkAutoClearExams, 30000);
+
+// ============================================= //
+// HERO CHECKLIST (Study, Code, Build, Grow)     //
+// ============================================= //
+function loadHeroChecklist() {
+  const dateKey = getTodayDateKey();
+  const saved = JSON.parse(localStorage.getItem(`hero_${dateKey}`) || '{}');
+
+  document.querySelectorAll('#heroChecklist input[type="checkbox"]').forEach(chk => {
+    const key = chk.dataset.hero;
+    chk.checked = !!saved[key];
+    const parent = chk.closest('.hero-check-item');
+    if (parent) parent.classList.toggle('done', chk.checked);
+
+    chk.addEventListener('change', () => {
+      const cur = JSON.parse(localStorage.getItem(`hero_${dateKey}`) || '{}');
+      cur[key] = chk.checked;
+      localStorage.setItem(`hero_${dateKey}`, JSON.stringify(cur));
+      if (parent) parent.classList.toggle('done', chk.checked);
+    });
+  });
+}
+
+// ============================================= //
+// DAILY GOALS (Interactive Tracker)             //
+// ============================================= //
+const dailyGoalsList = [
+  { id: 'gym', label: 'Gym (5:00 - 8:00 AM)' },
+  { id: 'leetcode', label: '1-2 LeetCode / HackerRank problems' },
+  { id: 'java', label: 'Java / DSA practice' },
+  { id: 'ml', label: 'Machine Learning study (1.5 - 2 hrs)' },
+  { id: 'college', label: 'Attend college & revise subjects' },
+  { id: 'project', label: 'Project / personal development' },
+  { id: 'read', label: 'Read / learn something new' },
+  { id: 'sleep', label: 'Maintain 7+ hrs sleep' }
+];
+
+function renderDailyGoals() {
+  const container = document.getElementById('trackerBody');
+  if (!container) return;
+  const dateKey = getTodayDateKey();
+  const saved = JSON.parse(localStorage.getItem(`goals_${dateKey}`) || '{}');
+  container.innerHTML = '';
+
+  dailyGoalsList.forEach(goal => {
+    const isDone = !!saved[goal.id];
+    const div = document.createElement('div');
+    div.className = 'tracker-item' + (isDone ? ' completed' : '');
+    div.innerHTML = `
+      <div style="display:flex;justify-content:center;align-items:center;">
+        <input type="checkbox" class="tracker-checkbox" id="goal_${goal.id}" ${isDone ? 'checked' : ''}>
+      </div>
+      <label for="goal_${goal.id}" style="cursor:pointer;">${goal.label}</label>
+    `;
+    container.appendChild(div);
+  });
+}
+
+const trackerBodyEl = document.getElementById('trackerBody');
+if (trackerBodyEl) {
+  trackerBodyEl.addEventListener('click', (e) => {
+    const item = e.target.closest('.tracker-item');
+    if (!item) return;
+    const chk = item.querySelector('.tracker-checkbox');
+    if (!chk) return;
+    if (e.target === chk) return;
+
+    e.preventDefault();
+    chk.checked = !chk.checked;
+    handleGoalToggle(chk, item);
+  });
+
+  trackerBodyEl.addEventListener('change', (e) => {
+    if (e.target.classList.contains('tracker-checkbox')) {
+      const item = e.target.closest('.tracker-item');
+      handleGoalToggle(e.target, item);
+    }
+  });
+}
+
+function handleGoalToggle(chk, item) {
+  const dateKey = getTodayDateKey();
+  const goalId = chk.id.replace('goal_', '');
+  const current = JSON.parse(localStorage.getItem(`goals_${dateKey}`) || '{}');
+  current[goalId] = chk.checked;
+  localStorage.setItem(`goals_${dateKey}`, JSON.stringify(current));
+  if (item) item.classList.toggle('completed', chk.checked);
+  updateProgress();
+}
+
+// ============================================= //
+// PROGRESS & STREAK SYSTEM                      //
+// ============================================= //
+function updateProgress() {
+  // 1. Timetable slots in the currently visible/active day
+  const activePanel = document.querySelector('.day-panel.active') || document.querySelector('.day-panel');
+  const activeSlots = activePanel ? Array.from(activePanel.querySelectorAll('.slot-checkbox')) : [];
+  const slotTotal = activeSlots.length;
+  const slotDone = activeSlots.filter(c => c.checked).length;
+
+  // 2. Daily goals
+  const activeGoals = Array.from(document.querySelectorAll('#trackerBody .tracker-checkbox'));
+  const goalTotal = activeGoals.length;
+  const goalDone = activeGoals.filter(c => c.checked).length;
+
+  // Calculate percentage:
+  // If user is checking timetable slots, reflect timetable completion!
+  // If user is checking both slots & goals, reflect combined completion!
+  let pct = 0;
+  if (slotTotal > 0 && goalDone > 0) {
+    pct = Math.round(((slotDone + goalDone) / (slotTotal + goalTotal)) * 100);
+  } else if (slotTotal > 0) {
+    pct = Math.round((slotDone / slotTotal) * 100);
+  } else if (goalTotal > 0) {
+    pct = Math.round((goalDone / goalTotal) * 100);
+  }
+
+  // Update Progress Bar & Labels
+  const progressFill = document.getElementById('progressFill');
+  const progressPct = document.getElementById('progressPct');
+  const completionStat = document.getElementById('completionStat');
+
+  if (progressFill) progressFill.style.width = pct + '%';
+  if (progressPct) progressPct.textContent = pct + '%';
+  if (completionStat) completionStat.textContent = pct + '%';
+
+  // Streak & Weekly counters
+  const streak = calculateStreak();
+  const weekly = calculateWeekly();
+  const streakEl = document.getElementById('streakStat');
+  const weeklyEl = document.getElementById('weeklyStat');
+  if (streakEl) streakEl.textContent = streak;
+  if (weeklyEl) weeklyEl.textContent = weekly + '/7';
+}
+
+function calculateStreak() {
+  let streak = 0;
+  const now = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = `date_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+    const savedSlots = JSON.parse(localStorage.getItem(`slots_${key}`) || '{}');
+    const savedGoals = JSON.parse(localStorage.getItem(`goals_${key}`) || '{}');
+    
+    const slotsDone = Object.values(savedSlots).filter(Boolean).length;
+    const goalsDone = Object.values(savedGoals).filter(Boolean).length;
+    const totalDone = slotsDone + goalsDone;
+
+    // Completed at least 1 task today or 3 tasks on past days counts as active streak
+    if (totalDone >= 3 || (i === 0 && totalDone >= 1)) {
+      streak++;
+    } else {
+      if (i === 0) continue; // Today might still be starting
+      break;
+    }
+  }
+  return streak;
+}
+
+function calculateWeekly() {
+  let count = 0;
+  const now = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = `date_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+    const savedSlots = JSON.parse(localStorage.getItem(`slots_${key}`) || '{}');
+    const savedGoals = JSON.parse(localStorage.getItem(`goals_${key}`) || '{}');
+    
+    const slotsDone = Object.values(savedSlots).filter(Boolean).length;
+    const goalsDone = Object.values(savedGoals).filter(Boolean).length;
+    const totalDone = slotsDone + goalsDone;
+
+    if (totalDone >= 3 || (i === 0 && totalDone >= 1)) {
+      count++;
+    }
+  }
+  return count;
+}
+
+// ============================================= //
+// COLLAPSIBLE HEADERS                           //
+// ============================================= //
+function toggleCollapse(header) {
+  const targetId = header.dataset.target;
+  const body = document.getElementById(targetId);
+  header.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+// ============================================= //
+// DARK MODE                                     //
+// ============================================= //
+function toggleDark() {
+  document.body.classList.toggle('dark-mode');
+  const isDark = document.body.classList.contains('dark-mode');
+  localStorage.setItem('darkMode', isDark);
+  document.getElementById('btnDark').innerHTML = isDark 
+    ? '<svg class="svg-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> LIGHT MODE'
+    : '<svg class="svg-icon-sm" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg> DARK MODE';
+}
+
+function loadDarkMode() {
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('btnDark').innerHTML = '<svg class="svg-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> LIGHT MODE';
+  }
+}
+
+// ============================================= //
+// RESET WEEK & EXPORT                           //
+// ============================================= //
+function resetWeek() {
+  if (!confirm('Reset all checkboxes & goals for the week?')) return;
+  const now = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = `date_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+    localStorage.removeItem(`goals_${key}`);
+    localStorage.removeItem(`slots_${key}`);
+    localStorage.removeItem(`hero_${key}`);
+  }
+  localStorage.removeItem('exams_done');
+  renderDailyGoals();
+  loadSlotCheckboxes();
+  loadExamCheckboxes();
+  loadHeroChecklist();
+  updateProgress();
+}
+
+function exportPDF() {
+  const tools = document.querySelector('.tools-grid');
+  const prog = document.getElementById('progressSection');
+  tools.style.display = 'none';
+  prog.style.display = 'none';
+  window.print();
+  setTimeout(() => { tools.style.display = ''; prog.style.display = ''; }, 500);
+}
+
+// ============================================= //
+// SWIPE GESTURES FOR MOBILE DAY SWITCHING       //
+// ============================================= //
+let touchStartX = 0;
+let touchEndX = 0;
+const dayContainer = document.getElementById('dayContainer');
+
+if (dayContainer) {
+  dayContainer.addEventListener('touchstart', e => { 
+    touchStartX = e.changedTouches[0].screenX; 
+  }, { passive: true });
+
+  dayContainer.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) < 45) return;
+
+    const currentActive = document.querySelector('.day-panel.active');
+    if (!currentActive) return;
+    const currentId = currentActive.id.replace('day-', '');
+    const currentIdx = allDayIds.indexOf(currentId);
+
+    if (diff > 0 && currentIdx < allDayIds.length - 1) {
+      switchDay(allDayIds[currentIdx + 1]);
+    } else if (diff < 0 && currentIdx > 0) {
+      switchDay(allDayIds[currentIdx - 1]);
+    }
+  }, { passive: true });
+}
+
+// ============================================= //
+// INIT                                          //
+// ============================================= //
+document.addEventListener('DOMContentLoaded', () => {
+  renderDailyGoals();
+  loadSlotCheckboxes();
+  loadExamCheckboxes();
+  loadHeroChecklist();
+  loadDarkMode();
+  initDaySelection();
+  updateProgress();
+});
+</script>
+</body>
+</html>
