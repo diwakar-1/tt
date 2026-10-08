@@ -1941,18 +1941,134 @@ body::before {
   </footer>
 </div>
 
-<script>
+<script type="module">
 // ============================================= //
-// LIVE CLOCK                                    //
+// FIREBASE IMPORTS (Modular v11)                //
 // ============================================= //
-function updateClock() {
-  const now = new Date();
-  const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
-  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-  document.getElementById('liveDate').textContent = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
-  document.getElementById('liveTime').textContent = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true }).toUpperCase();
-  document.getElementById('liveDay').textContent = days[now.getDay()];
+import { initializeApp }
+from
+"https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot,
+  serverTimestamp
 }
+from
+"https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+import { getAnalytics }
+from
+"https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
+
+// ============================================= //
+// CONFIG & USER SETUP                           //
+// ============================================= //
+const firebaseConfig = {
+  apiKey: "AIzaSyCzSqr3PvfwEpip5ChwmFjlzvGJqErLCgo",
+  authDomain: "tt11-fbb46.firebaseapp.com",
+  projectId: "tt11-fbb46",
+  storageBucket: "tt11-fbb46.firebasestorage.app",
+  messagingSenderId: "672177216982",
+  appId: "1:672177216982:web:c9166f7c74dfad2d21d877",
+  measurementId: "G-1Q6YQ0LYNR"
+};
+
+const USER_ID = "diwakar";
+
+let isFirebaseConfigured = false;
+let app = null;
+let db = null;
+let analytics = null;
+
+try {
+  app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  try {
+    analytics = getAnalytics(app);
+  } catch (errAnalytics) {
+    // Analytics is optional and might not initialize in local file:// environments
+  }
+  isFirebaseConfigured = true;
+} catch (e) {
+  console.warn("Firebase initialization error:", e);
+  isFirebaseConfigured = false;
+}
+
+// ============================================= //
+// TIMEZONE & CLOCK LOGIC (Asia/Kolkata)         //
+// ============================================= //
+const IST_OPTIONS = {
+  timeZone: "Asia/Kolkata"
+};
+
+function getISTDate() {
+  return new Date(
+    new Date().toLocaleString(
+      "en-US",
+      { timeZone: "Asia/Kolkata" }
+    )
+  );
+}
+
+function getISTDateString(d = getISTDate()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function getISTYesterdayString() {
+  const d = getISTDate();
+  d.setDate(d.getDate() - 1);
+  return getISTDateString(d);
+}
+
+function updateClock() {
+  const now = getISTDate();
+
+  const day =
+    now.toLocaleDateString(
+      "en-IN",
+      {
+        weekday: "long",
+        timeZone: "Asia/Kolkata"
+      }
+    );
+
+  const date =
+    now.toLocaleDateString(
+      "en-IN",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Asia/Kolkata"
+      }
+    );
+
+  const time =
+    now.toLocaleTimeString(
+      "en-IN",
+      {
+        hour12: true,
+        timeZone: "Asia/Kolkata"
+      }
+    );
+
+  const dayEl = document.getElementById('liveDay');
+  const dateEl = document.getElementById('liveDate');
+  const timeEl = document.getElementById('liveTime');
+  if (dayEl) dayEl.textContent = day.toUpperCase();
+  if (dateEl) dateEl.textContent = date.toUpperCase();
+  if (timeEl) timeEl.textContent = time.toUpperCase();
+
+  checkMidnightReset();
+}
+
 updateClock();
 setInterval(updateClock, 1000);
 
@@ -1963,39 +2079,35 @@ const dayMap = ['sunday','monday','tuesday','wednesday','thursday','friday','sat
 const allDayIds = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday','special'];
 
 function switchDay(dayId) {
-  // Hide all panels
   document.querySelectorAll('.day-panel').forEach(p => p.classList.remove('active'));
-  // Deactivate all nav buttons
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
-  // Show selected panel
   const panel = document.getElementById('day-' + dayId);
   if (panel) panel.classList.add('active');
 
-  // Activate selected nav button
   const btn = document.getElementById('nav-' + dayId);
   if (btn) btn.classList.add('active');
 
   localStorage.setItem('selectedDay', dayId);
+  localStorage.setItem('selectedDayDate', getISTDateString());
   highlightCurrentSlot(dayId);
-  updateProgress();
 }
 
-// Nav buttons click
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => switchDay(btn.dataset.day));
 });
 
-// Auto-select today on launch
 function initDaySelection() {
-  const now = new Date();
+  const now = getISTDate();
   const todayKey = dayMap[now.getDay()];
 
-  // Mark today's button with pink indicator
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('today'));
   const todayBtn = document.getElementById('nav-' + todayKey);
   if (todayBtn) todayBtn.classList.add('today');
 
-  const saved = localStorage.getItem('selectedDay');
+  const savedDayDate = localStorage.getItem('selectedDayDate');
+  const todayDateStr = getISTDateString();
+  const saved = (savedDayDate === todayDateStr) ? localStorage.getItem('selectedDay') : null;
   switchDay(saved || todayKey);
 }
 
@@ -2003,14 +2115,12 @@ function initDaySelection() {
 // HIGHLIGHT ONGOING TIME SLOT                   //
 // ============================================= //
 function highlightCurrentSlot(dayId) {
-  const now = new Date();
+  const now = getISTDate();
   const todayKey = dayMap[now.getDay()];
   const currentHour = now.getHours() + now.getMinutes() / 60;
 
-  // Clear previous
   document.querySelectorAll('.time-slot.current-slot').forEach(s => s.classList.remove('current-slot'));
 
-  // Only highlight if viewing today
   if (dayId !== todayKey) return;
 
   const panel = document.getElementById('day-' + dayId);
@@ -2034,8 +2144,414 @@ setInterval(() => {
 // DATE KEY HELPER                               //
 // ============================================= //
 function getTodayDateKey() {
-  const now = new Date();
+  const now = getISTDate();
   return `date_${now.getFullYear()}_${now.getMonth()}_${now.getDate()}`;
+}
+
+// ============================================= //
+// CHECKLIST DEFINITION & DATA STORE             //
+// ============================================= //
+const TASK_KEYS = ['gym', 'leetcode', 'java', 'ml', 'revision', 'project', 'reading', 'sleep'];
+
+const dailyGoalsList = [
+  { id: 'gym', label: 'Gym (5:00 - 8:00 AM)' },
+  { id: 'leetcode', label: '1-2 LeetCode / HackerRank problems' },
+  { id: 'java', label: 'Java / DSA practice' },
+  { id: 'ml', label: 'Machine Learning study (1.5 - 2 hrs)' },
+  { id: 'revision', label: 'Attend college & revise subjects' },
+  { id: 'project', label: 'Project / personal development' },
+  { id: 'reading', label: 'Read / learn something new' },
+  { id: 'sleep', label: 'Maintain 7+ hrs sleep' }
+];
+
+let currentTaskState = {
+  gym: false,
+  leetcode: false,
+  java: false,
+  ml: false,
+  revision: false,
+  project: false,
+  reading: false,
+  sleep: false,
+  dailyProgress: 0,
+  weeklyProgress: 0,
+  streak: 0,
+  lastCompletedDate: null,
+  tasksDate: getISTDateString(),
+  weeklyHistory: {},
+  slots: {},
+  hero: {}
+};
+
+// ============================================= //
+// LOCAL STORAGE FALLBACK HELPERS                //
+// ============================================= //
+const LOCAL_STORAGE_KEY = `aiml_tasks_${USER_ID}`;
+
+function saveToLocalStorage(data) {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn("Failed saving to localStorage:", e);
+  }
+}
+
+function loadFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.warn("Failed reading from localStorage:", e);
+    return null;
+  }
+}
+
+// ============================================= //
+// SAVE FUNCTION (Firestore with local fallback) //
+// ============================================= //
+async function saveTasks(data) {
+  saveToLocalStorage(data);
+
+  if (!isFirebaseConfigured || !db) return;
+
+  try {
+    await setDoc(
+      doc(db, "users", USER_ID),
+      {
+        ...data,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+    localStorage.removeItem('pending_firebase_sync');
+  } catch (err) {
+    console.warn("Firestore save failed, temporarily saved in localStorage:", err);
+    localStorage.setItem('pending_firebase_sync', JSON.stringify(data));
+  }
+}
+
+// ============================================= //
+// LOAD FUNCTION                                 //
+// ============================================= //
+async function loadTasks() {
+  if (!isFirebaseConfigured || !db) {
+    const local = loadFromLocalStorage();
+    if (local) applyDataToUI(local);
+    return;
+  }
+
+  try {
+    const snap = await getDoc(
+      doc(db, "users", USER_ID)
+    );
+
+    if (!snap.exists()) {
+      const local = loadFromLocalStorage();
+      if (local) {
+        applyDataToUI(local);
+        await saveTasks(local);
+      }
+      return;
+    }
+
+    const data = snap.data();
+    applyDataToUI(data);
+    saveToLocalStorage(data);
+  } catch (err) {
+    console.warn("Firestore loadTasks error, falling back to localStorage:", err);
+    const local = loadFromLocalStorage();
+    if (local) applyDataToUI(local);
+  }
+}
+
+// ============================================= //
+// REALTIME SYNC (onSnapshot)                    //
+// ============================================= //
+function setupRealtimeSync() {
+  if (!isFirebaseConfigured || !db) return;
+
+  try {
+    onSnapshot(
+      doc(db, "users", USER_ID),
+      (snapshot) => {
+        if (!snapshot.exists()) return;
+        const data = snapshot.data();
+        applyDataToUI(data);
+        saveToLocalStorage(data);
+      },
+      (error) => {
+        console.warn("onSnapshot listener error:", error);
+      }
+    );
+  } catch (err) {
+    console.warn("Failed setting up onSnapshot listener:", err);
+  }
+}
+
+// ============================================= //
+// AUTOMATIC OFFLINE RECONNECT SYNC              //
+// ============================================= //
+window.addEventListener('online', async () => {
+  const pending = localStorage.getItem('pending_firebase_sync');
+  if (pending && isFirebaseConfigured && db) {
+    try {
+      const data = JSON.parse(pending);
+      await saveTasks(data);
+    } catch (e) {
+      console.warn("Failed syncing offline data on reconnect:", e);
+    }
+  }
+});
+
+// ============================================= //
+// UI UPDATE & PROGRESS RECALCULATION            //
+// ============================================= //
+function updateProgressUI() {
+  const pct = currentTaskState.dailyProgress || 0;
+  const streak = currentTaskState.streak || 0;
+  const weekly = currentTaskState.weeklyProgress || 0;
+
+  const progressFill = document.getElementById('progressFill');
+  const progressPct = document.getElementById('progressPct');
+  const completionStat = document.getElementById('completionStat');
+  const streakEl = document.getElementById('streakStat');
+  const weeklyEl = document.getElementById('weeklyStat');
+
+  if (progressFill) progressFill.style.width = pct + '%';
+  if (progressPct) progressPct.textContent = pct + '%';
+  if (completionStat) completionStat.textContent = pct + '%';
+  if (streakEl) streakEl.textContent = streak;
+  if (weeklyEl) weeklyEl.textContent = `${weekly}/7`;
+}
+
+function applyDataToUI(data) {
+  if (!data) return;
+
+  const todayStr = getISTDateString();
+  const yesterdayStr = getISTYesterdayString();
+
+  if (data.tasksDate && data.tasksDate !== todayStr) {
+    TASK_KEYS.forEach(k => {
+      currentTaskState[k] = false;
+    });
+    currentTaskState.dailyProgress = 0;
+    currentTaskState.tasksDate = todayStr;
+
+    let streak = (typeof data.streak === 'number') ? data.streak : 0;
+    if (data.lastCompletedDate && data.lastCompletedDate !== todayStr && data.lastCompletedDate !== yesterdayStr) {
+      streak = 0;
+    }
+    currentTaskState.streak = streak;
+    currentTaskState.lastCompletedDate = data.lastCompletedDate || null;
+    currentTaskState.weeklyProgress = (typeof data.weeklyProgress === 'number') ? data.weeklyProgress : 0;
+    currentTaskState.weeklyHistory = data.weeklyHistory || {};
+  } else {
+    TASK_KEYS.forEach(k => {
+      currentTaskState[k] = !!data[k];
+    });
+    currentTaskState.dailyProgress = (typeof data.dailyProgress === 'number') ? data.dailyProgress : 0;
+    currentTaskState.streak = (typeof data.streak === 'number') ? data.streak : 0;
+    currentTaskState.weeklyProgress = (typeof data.weeklyProgress === 'number') ? data.weeklyProgress : 0;
+    currentTaskState.lastCompletedDate = data.lastCompletedDate || null;
+    currentTaskState.tasksDate = data.tasksDate || todayStr;
+    currentTaskState.weeklyHistory = data.weeklyHistory || {};
+  }
+
+  if (data.slots) currentTaskState.slots = data.slots;
+  if (data.hero) currentTaskState.hero = data.hero;
+
+  TASK_KEYS.forEach(k => {
+    const chk = document.getElementById('goal_' + k);
+    if (chk) {
+      chk.checked = !!currentTaskState[k];
+      const item = chk.closest('.tracker-item');
+      if (item) item.classList.toggle('completed', chk.checked);
+    }
+  });
+
+  updateProgressUI();
+  loadSlotCheckboxes();
+  loadHeroChecklist();
+}
+
+async function recalculateAndSave() {
+  const todayStr = getISTDateString();
+  const yesterdayStr = getISTYesterdayString();
+
+  const completedTasks = TASK_KEYS.filter(k => currentTaskState[k] === true).length;
+  const totalTasks = TASK_KEYS.length;
+  const dailyProgress = Math.round((completedTasks / totalTasks) * 100);
+  currentTaskState.dailyProgress = dailyProgress;
+  currentTaskState.tasksDate = todayStr;
+
+  let streak = currentTaskState.streak || 0;
+  let lastCompleted = currentTaskState.lastCompletedDate;
+
+  if (lastCompleted && lastCompleted !== todayStr && lastCompleted !== yesterdayStr) {
+    streak = 0;
+  }
+
+  const allCompletedToday = (completedTasks === totalTasks);
+
+  if (allCompletedToday) {
+    if (lastCompleted !== todayStr) {
+      if (lastCompleted === yesterdayStr) {
+        streak += 1;
+      } else {
+        streak = 1;
+      }
+      lastCompleted = todayStr;
+    }
+  } else {
+    if (lastCompleted === todayStr) {
+      streak = Math.max(0, streak - 1);
+      lastCompleted = yesterdayStr;
+    }
+  }
+
+  currentTaskState.streak = streak;
+  currentTaskState.lastCompletedDate = lastCompleted;
+
+  let history = currentTaskState.weeklyHistory || {};
+  if (allCompletedToday) {
+    history[todayStr] = true;
+  } else {
+    delete history[todayStr];
+  }
+
+  let weekCount = 0;
+  const now = getISTDate();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = getISTDateString(d);
+    if (history[key]) weekCount++;
+  }
+  currentTaskState.weeklyProgress = weekCount;
+  currentTaskState.weeklyHistory = history;
+
+  updateProgressUI();
+
+  await saveTasks({
+    gym: !!currentTaskState.gym,
+    leetcode: !!currentTaskState.leetcode,
+    java: !!currentTaskState.java,
+    ml: !!currentTaskState.ml,
+    revision: !!currentTaskState.revision,
+    project: !!currentTaskState.project,
+    reading: !!currentTaskState.reading,
+    sleep: !!currentTaskState.sleep,
+    dailyProgress: currentTaskState.dailyProgress,
+    weeklyProgress: currentTaskState.weeklyProgress,
+    streak: currentTaskState.streak,
+    lastCompletedDate: currentTaskState.lastCompletedDate,
+    tasksDate: currentTaskState.tasksDate,
+    weeklyHistory: currentTaskState.weeklyHistory,
+    slots: currentTaskState.slots,
+    hero: currentTaskState.hero
+  });
+}
+
+// ============================================= //
+// AUTO RESET AT IST MIDNIGHT                    //
+// ============================================= //
+function checkMidnightReset() {
+  const todayStr = getISTDateString();
+  if (currentTaskState.tasksDate && currentTaskState.tasksDate !== todayStr) {
+    TASK_KEYS.forEach(k => {
+      currentTaskState[k] = false;
+    });
+    currentTaskState.dailyProgress = 0;
+    currentTaskState.tasksDate = todayStr;
+
+    const yesterdayStr = getISTYesterdayString();
+    if (currentTaskState.lastCompletedDate && currentTaskState.lastCompletedDate !== todayStr && currentTaskState.lastCompletedDate !== yesterdayStr) {
+      currentTaskState.streak = 0;
+    }
+
+    TASK_KEYS.forEach(k => {
+      const chk = document.getElementById('goal_' + k);
+      if (chk) {
+        chk.checked = false;
+        const item = chk.closest('.tracker-item');
+        if (item) item.classList.remove('completed');
+      }
+    });
+
+    updateProgressUI();
+
+    saveTasks({
+      gym: false,
+      leetcode: false,
+      java: false,
+      ml: false,
+      revision: false,
+      project: false,
+      reading: false,
+      sleep: false,
+      dailyProgress: 0,
+      weeklyProgress: currentTaskState.weeklyProgress,
+      streak: currentTaskState.streak,
+      lastCompletedDate: currentTaskState.lastCompletedDate,
+      tasksDate: todayStr,
+      weeklyHistory: currentTaskState.weeklyHistory,
+      slots: currentTaskState.slots,
+      hero: currentTaskState.hero
+    });
+
+    initDaySelection();
+  }
+}
+
+// ============================================= //
+// DAILY GOALS (Interactive Tracker)             //
+// ============================================= //
+function renderDailyGoals() {
+  const container = document.getElementById('trackerBody');
+  if (!container) return;
+  container.innerHTML = '';
+
+  dailyGoalsList.forEach(goal => {
+    const isDone = !!currentTaskState[goal.id];
+    const div = document.createElement('div');
+    div.className = 'tracker-item' + (isDone ? ' completed' : '');
+    div.innerHTML = `
+      <div style="display:flex;justify-content:center;align-items:center;">
+        <input type="checkbox" class="tracker-checkbox" id="goal_${goal.id}" ${isDone ? 'checked' : ''}>
+      </div>
+      <label for="goal_${goal.id}" style="cursor:pointer;">${goal.label}</label>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function handleGoalToggle(chk, item) {
+  const goalId = chk.id.replace('goal_', '');
+  currentTaskState[goalId] = chk.checked;
+  if (item) item.classList.toggle('completed', chk.checked);
+  recalculateAndSave();
+}
+
+const trackerBodyEl = document.getElementById('trackerBody');
+if (trackerBodyEl) {
+  trackerBodyEl.addEventListener('click', (e) => {
+    const item = e.target.closest('.tracker-item');
+    if (!item) return;
+    const chk = item.querySelector('.tracker-checkbox');
+    if (!chk) return;
+    if (e.target === chk) return;
+
+    e.preventDefault();
+    chk.checked = !chk.checked;
+    handleGoalToggle(chk, item);
+  });
+
+  trackerBodyEl.addEventListener('change', (e) => {
+    if (e.target.classList.contains('tracker-checkbox')) {
+      const item = e.target.closest('.tracker-item');
+      handleGoalToggle(e.target, item);
+    }
+  });
 }
 
 // ============================================= //
@@ -2043,7 +2559,7 @@ function getTodayDateKey() {
 // ============================================= //
 function loadSlotCheckboxes() {
   const dateKey = getTodayDateKey();
-  const savedSlots = JSON.parse(localStorage.getItem(`slots_${dateKey}`) || '{}');
+  const savedSlots = (currentTaskState.slots && currentTaskState.slots[dateKey]) || JSON.parse(localStorage.getItem(`slots_${dateKey}`) || '{}');
 
   document.querySelectorAll('.time-slot').forEach(slot => {
     const chk = slot.querySelector('.slot-checkbox');
@@ -2058,15 +2574,15 @@ function loadSlotCheckboxes() {
 function handleSlotToggle(chk, slot) {
   const dateKey = getTodayDateKey();
   const slotId = chk.dataset.slotid;
-  const current = JSON.parse(localStorage.getItem(`slots_${dateKey}`) || '{}');
-  current[slotId] = chk.checked;
-  localStorage.setItem(`slots_${dateKey}`, JSON.stringify(current));
+  if (!currentTaskState.slots) currentTaskState.slots = {};
+  if (!currentTaskState.slots[dateKey]) currentTaskState.slots[dateKey] = {};
+  currentTaskState.slots[dateKey][slotId] = chk.checked;
+  localStorage.setItem(`slots_${dateKey}`, JSON.stringify(currentTaskState.slots[dateKey]));
 
   if (slot) slot.classList.toggle('completed', chk.checked);
-  updateProgress();
+  saveTasks(currentTaskState);
 }
 
-// Delegated listener on dayContainer for bulletproof toggle & no desync
 const dayContainerEl = document.getElementById('dayContainer');
 if (dayContainerEl) {
   dayContainerEl.addEventListener('click', (e) => {
@@ -2075,12 +2591,8 @@ if (dayContainerEl) {
     const chk = slot.querySelector('.slot-checkbox');
     if (!chk) return;
 
-    if (e.target === chk) {
-      // Direct checkbox click - handled by change event below
-      return;
-    }
+    if (e.target === chk) return;
 
-    // Clicked anywhere else on row (time, activity, wrapper)
     e.preventDefault();
     chk.checked = !chk.checked;
     handleSlotToggle(chk, slot);
@@ -2091,6 +2603,30 @@ if (dayContainerEl) {
       const slot = e.target.closest('.time-slot');
       handleSlotToggle(e.target, slot);
     }
+  });
+}
+
+// ============================================= //
+// HERO CHECKLIST (Study, Code, Build, Grow)     //
+// ============================================= //
+function loadHeroChecklist() {
+  const dateKey = getTodayDateKey();
+  const saved = (currentTaskState.hero && currentTaskState.hero[dateKey]) || JSON.parse(localStorage.getItem(`hero_${dateKey}`) || '{}');
+
+  document.querySelectorAll('#heroChecklist input[type="checkbox"]').forEach(chk => {
+    const key = chk.dataset.hero;
+    chk.checked = !!saved[key];
+    const parent = chk.closest('.hero-check-item');
+    if (parent) parent.classList.toggle('done', chk.checked);
+
+    chk.onchange = () => {
+      if (!currentTaskState.hero) currentTaskState.hero = {};
+      if (!currentTaskState.hero[dateKey]) currentTaskState.hero[dateKey] = {};
+      currentTaskState.hero[dateKey][key] = chk.checked;
+      localStorage.setItem(`hero_${dateKey}`, JSON.stringify(currentTaskState.hero[dateKey]));
+      if (parent) parent.classList.toggle('done', chk.checked);
+      saveTasks(currentTaskState);
+    };
   });
 }
 
@@ -2107,7 +2643,7 @@ const examSchedule = [
 ];
 
 function checkAutoClearExams() {
-  const now = new Date();
+  const now = getISTDate();
   const savedExams = JSON.parse(localStorage.getItem('exams_done') || '{}');
   let changed = false;
   let allOver = true;
@@ -2121,7 +2657,6 @@ function checkAutoClearExams() {
       allOver = false;
     }
 
-    // Automatically clear when exam time is past
     if (isOver && !savedExams[exam.id]) {
       savedExams[exam.id] = true;
       changed = true;
@@ -2136,7 +2671,6 @@ function checkAutoClearExams() {
     localStorage.setItem('exams_done', JSON.stringify(savedExams));
   }
 
-  // Update UI for each exam row
   document.querySelectorAll('.exam-row').forEach(row => {
     const chk = row.querySelector('.slot-checkbox');
     if (!chk) return;
@@ -2146,7 +2680,6 @@ function checkAutoClearExams() {
     row.classList.toggle('completed', isChecked);
     row.classList.toggle('exam-cleared', isChecked);
 
-    // Add or remove CLEARED status badge
     let badge = row.querySelector('.exam-status-badge');
     if (isChecked) {
       if (!badge) {
@@ -2161,13 +2694,11 @@ function checkAutoClearExams() {
     }
   });
 
-  // Check if all exams over banner
   const banner = document.getElementById('allExamsClearedBanner');
   if (banner) {
     banner.style.display = (allOver || clearedCount === examSchedule.length) ? 'block' : 'none';
   }
 
-  // Update toggle button text if hiding cleared
   updateHideClearedBtn(clearedCount);
 }
 
@@ -2228,188 +2759,7 @@ function handleExamToggle(chk, row) {
   checkAutoClearExams();
 }
 
-// Auto-check exam status every 30 seconds
 setInterval(checkAutoClearExams, 30000);
-
-// ============================================= //
-// HERO CHECKLIST (Study, Code, Build, Grow)     //
-// ============================================= //
-function loadHeroChecklist() {
-  const dateKey = getTodayDateKey();
-  const saved = JSON.parse(localStorage.getItem(`hero_${dateKey}`) || '{}');
-
-  document.querySelectorAll('#heroChecklist input[type="checkbox"]').forEach(chk => {
-    const key = chk.dataset.hero;
-    chk.checked = !!saved[key];
-    const parent = chk.closest('.hero-check-item');
-    if (parent) parent.classList.toggle('done', chk.checked);
-
-    chk.addEventListener('change', () => {
-      const cur = JSON.parse(localStorage.getItem(`hero_${dateKey}`) || '{}');
-      cur[key] = chk.checked;
-      localStorage.setItem(`hero_${dateKey}`, JSON.stringify(cur));
-      if (parent) parent.classList.toggle('done', chk.checked);
-    });
-  });
-}
-
-// ============================================= //
-// DAILY GOALS (Interactive Tracker)             //
-// ============================================= //
-const dailyGoalsList = [
-  { id: 'gym', label: 'Gym (5:00 - 8:00 AM)' },
-  { id: 'leetcode', label: '1-2 LeetCode / HackerRank problems' },
-  { id: 'java', label: 'Java / DSA practice' },
-  { id: 'ml', label: 'Machine Learning study (1.5 - 2 hrs)' },
-  { id: 'college', label: 'Attend college & revise subjects' },
-  { id: 'project', label: 'Project / personal development' },
-  { id: 'read', label: 'Read / learn something new' },
-  { id: 'sleep', label: 'Maintain 7+ hrs sleep' }
-];
-
-function renderDailyGoals() {
-  const container = document.getElementById('trackerBody');
-  if (!container) return;
-  const dateKey = getTodayDateKey();
-  const saved = JSON.parse(localStorage.getItem(`goals_${dateKey}`) || '{}');
-  container.innerHTML = '';
-
-  dailyGoalsList.forEach(goal => {
-    const isDone = !!saved[goal.id];
-    const div = document.createElement('div');
-    div.className = 'tracker-item' + (isDone ? ' completed' : '');
-    div.innerHTML = `
-      <div style="display:flex;justify-content:center;align-items:center;">
-        <input type="checkbox" class="tracker-checkbox" id="goal_${goal.id}" ${isDone ? 'checked' : ''}>
-      </div>
-      <label for="goal_${goal.id}" style="cursor:pointer;">${goal.label}</label>
-    `;
-    container.appendChild(div);
-  });
-}
-
-const trackerBodyEl = document.getElementById('trackerBody');
-if (trackerBodyEl) {
-  trackerBodyEl.addEventListener('click', (e) => {
-    const item = e.target.closest('.tracker-item');
-    if (!item) return;
-    const chk = item.querySelector('.tracker-checkbox');
-    if (!chk) return;
-    if (e.target === chk) return;
-
-    e.preventDefault();
-    chk.checked = !chk.checked;
-    handleGoalToggle(chk, item);
-  });
-
-  trackerBodyEl.addEventListener('change', (e) => {
-    if (e.target.classList.contains('tracker-checkbox')) {
-      const item = e.target.closest('.tracker-item');
-      handleGoalToggle(e.target, item);
-    }
-  });
-}
-
-function handleGoalToggle(chk, item) {
-  const dateKey = getTodayDateKey();
-  const goalId = chk.id.replace('goal_', '');
-  const current = JSON.parse(localStorage.getItem(`goals_${dateKey}`) || '{}');
-  current[goalId] = chk.checked;
-  localStorage.setItem(`goals_${dateKey}`, JSON.stringify(current));
-  if (item) item.classList.toggle('completed', chk.checked);
-  updateProgress();
-}
-
-// ============================================= //
-// PROGRESS & STREAK SYSTEM                      //
-// ============================================= //
-function updateProgress() {
-  // 1. Timetable slots in the currently visible/active day
-  const activePanel = document.querySelector('.day-panel.active') || document.querySelector('.day-panel');
-  const activeSlots = activePanel ? Array.from(activePanel.querySelectorAll('.slot-checkbox')) : [];
-  const slotTotal = activeSlots.length;
-  const slotDone = activeSlots.filter(c => c.checked).length;
-
-  // 2. Daily goals
-  const activeGoals = Array.from(document.querySelectorAll('#trackerBody .tracker-checkbox'));
-  const goalTotal = activeGoals.length;
-  const goalDone = activeGoals.filter(c => c.checked).length;
-
-  // Calculate percentage:
-  // If user is checking timetable slots, reflect timetable completion!
-  // If user is checking both slots & goals, reflect combined completion!
-  let pct = 0;
-  if (slotTotal > 0 && goalDone > 0) {
-    pct = Math.round(((slotDone + goalDone) / (slotTotal + goalTotal)) * 100);
-  } else if (slotTotal > 0) {
-    pct = Math.round((slotDone / slotTotal) * 100);
-  } else if (goalTotal > 0) {
-    pct = Math.round((goalDone / goalTotal) * 100);
-  }
-
-  // Update Progress Bar & Labels
-  const progressFill = document.getElementById('progressFill');
-  const progressPct = document.getElementById('progressPct');
-  const completionStat = document.getElementById('completionStat');
-
-  if (progressFill) progressFill.style.width = pct + '%';
-  if (progressPct) progressPct.textContent = pct + '%';
-  if (completionStat) completionStat.textContent = pct + '%';
-
-  // Streak & Weekly counters
-  const streak = calculateStreak();
-  const weekly = calculateWeekly();
-  const streakEl = document.getElementById('streakStat');
-  const weeklyEl = document.getElementById('weeklyStat');
-  if (streakEl) streakEl.textContent = streak;
-  if (weeklyEl) weeklyEl.textContent = weekly + '/7';
-}
-
-function calculateStreak() {
-  let streak = 0;
-  const now = new Date();
-  for (let i = 0; i < 365; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const key = `date_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
-    const savedSlots = JSON.parse(localStorage.getItem(`slots_${key}`) || '{}');
-    const savedGoals = JSON.parse(localStorage.getItem(`goals_${key}`) || '{}');
-    
-    const slotsDone = Object.values(savedSlots).filter(Boolean).length;
-    const goalsDone = Object.values(savedGoals).filter(Boolean).length;
-    const totalDone = slotsDone + goalsDone;
-
-    // Completed at least 1 task today or 3 tasks on past days counts as active streak
-    if (totalDone >= 3 || (i === 0 && totalDone >= 1)) {
-      streak++;
-    } else {
-      if (i === 0) continue; // Today might still be starting
-      break;
-    }
-  }
-  return streak;
-}
-
-function calculateWeekly() {
-  let count = 0;
-  const now = new Date();
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const key = `date_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
-    const savedSlots = JSON.parse(localStorage.getItem(`slots_${key}`) || '{}');
-    const savedGoals = JSON.parse(localStorage.getItem(`goals_${key}`) || '{}');
-    
-    const slotsDone = Object.values(savedSlots).filter(Boolean).length;
-    const goalsDone = Object.values(savedGoals).filter(Boolean).length;
-    const totalDone = slotsDone + goalsDone;
-
-    if (totalDone >= 3 || (i === 0 && totalDone >= 1)) {
-      count++;
-    }
-  }
-  return count;
-}
 
 // ============================================= //
 // COLLAPSIBLE HEADERS                           //
@@ -2443,32 +2793,41 @@ function loadDarkMode() {
 // ============================================= //
 // RESET WEEK & EXPORT                           //
 // ============================================= //
-function resetWeek() {
+async function resetWeek() {
   if (!confirm('Reset all checkboxes & goals for the week?')) return;
-  const now = new Date();
+  TASK_KEYS.forEach(k => {
+    currentTaskState[k] = false;
+  });
+  currentTaskState.dailyProgress = 0;
+  currentTaskState.slots = {};
+  currentTaskState.hero = {};
+  currentTaskState.weeklyHistory = {};
+  localStorage.removeItem('exams_done');
+
+  const now = getISTDate();
   for (let i = 0; i < 7; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     const key = `date_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
-    localStorage.removeItem(`goals_${key}`);
     localStorage.removeItem(`slots_${key}`);
     localStorage.removeItem(`hero_${key}`);
   }
-  localStorage.removeItem('exams_done');
-  renderDailyGoals();
-  loadSlotCheckboxes();
+
+  applyDataToUI(currentTaskState);
+  await saveTasks(currentTaskState);
   loadExamCheckboxes();
-  loadHeroChecklist();
-  updateProgress();
 }
 
 function exportPDF() {
   const tools = document.querySelector('.tools-grid');
   const prog = document.getElementById('progressSection');
-  tools.style.display = 'none';
-  prog.style.display = 'none';
+  if (tools) tools.style.display = 'none';
+  if (prog) prog.style.display = 'none';
   window.print();
-  setTimeout(() => { tools.style.display = ''; prog.style.display = ''; }, 500);
+  setTimeout(() => {
+    if (tools) tools.style.display = '';
+    if (prog) prog.style.display = '';
+  }, 500);
 }
 
 // ============================================= //
@@ -2502,17 +2861,29 @@ if (dayContainer) {
 }
 
 // ============================================= //
+// ATTACH TO WINDOW FOR INLINE HTML LISTENERS    //
+// ============================================= //
+window.toggleCollapse = toggleCollapse;
+window.resetWeek = resetWeek;
+window.exportPDF = exportPDF;
+window.toggleDark = toggleDark;
+window.toggleHideCleared = toggleHideCleared;
+window.switchDay = switchDay;
+
+// ============================================= //
 // INIT                                          //
 // ============================================= //
-document.addEventListener('DOMContentLoaded', () => {
-  renderDailyGoals();
-  loadSlotCheckboxes();
-  loadExamCheckboxes();
-  loadHeroChecklist();
-  loadDarkMode();
-  initDaySelection();
-  updateProgress();
-});
+renderDailyGoals();
+loadSlotCheckboxes();
+loadExamCheckboxes();
+loadHeroChecklist();
+loadDarkMode();
+initDaySelection();
+updateProgressUI();
+
+// Load tasks & setup realtime sync
+loadTasks().catch(err => console.warn("loadTasks error:", err));
+setupRealtimeSync();
 </script>
 </body>
 </html>
