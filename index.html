@@ -1979,6 +1979,27 @@ const firebaseConfig = {
 
 const USER_ID = "diwakar";
 
+// ============================================= //
+// STATE DECLARATIONS (Safely initialized first) //
+// ============================================= //
+const TASK_KEYS = ['gym', 'leetcode', 'java', 'ml', 'revision', 'project', 'reading', 'sleep'];
+
+const dailyGoalsList = [
+  { id: 'gym', label: 'Gym (5:00 - 8:00 AM)' },
+  { id: 'leetcode', label: '1-2 LeetCode / HackerRank problems' },
+  { id: 'java', label: 'Java / DSA practice' },
+  { id: 'ml', label: 'Machine Learning study (1.5 - 2 hrs)' },
+  { id: 'revision', label: 'Attend college & revise subjects' },
+  { id: 'project', label: 'Project / personal development' },
+  { id: 'reading', label: 'Read / learn something new' },
+  { id: 'sleep', label: 'Maintain 7+ hrs sleep' }
+];
+
+let currentTaskState = {};
+let dailyProgress = 0;
+let weeklyProgress = 0;
+let streak = 0;
+
 let isFirebaseConfigured = false;
 let app = null;
 let db = null;
@@ -2027,6 +2048,56 @@ function getISTYesterdayString() {
   return getISTDateString(d);
 }
 
+function checkMidnightReset() {
+  const todayStr = getISTDateString();
+  if (currentTaskState && currentTaskState.tasksDate && currentTaskState.tasksDate !== todayStr) {
+    TASK_KEYS.forEach(k => {
+      currentTaskState[k] = false;
+    });
+    currentTaskState.dailyProgress = 0;
+    dailyProgress = 0;
+    currentTaskState.tasksDate = todayStr;
+
+    const yesterdayStr = getISTYesterdayString();
+    if (currentTaskState.lastCompletedDate && currentTaskState.lastCompletedDate !== todayStr && currentTaskState.lastCompletedDate !== yesterdayStr) {
+      currentTaskState.streak = 0;
+      streak = 0;
+    }
+
+    TASK_KEYS.forEach(k => {
+      const chk = document.getElementById('goal_' + k);
+      if (chk) {
+        chk.checked = false;
+        const item = chk.closest('.tracker-item');
+        if (item) item.classList.remove('completed');
+      }
+    });
+
+    updateProgressUI();
+
+    saveTasks({
+      gym: false,
+      leetcode: false,
+      java: false,
+      ml: false,
+      revision: false,
+      project: false,
+      reading: false,
+      sleep: false,
+      dailyProgress: 0,
+      weeklyProgress: currentTaskState.weeklyProgress || weeklyProgress || 0,
+      streak: currentTaskState.streak || streak || 0,
+      lastCompletedDate: currentTaskState.lastCompletedDate || null,
+      tasksDate: todayStr,
+      weeklyHistory: currentTaskState.weeklyHistory || {},
+      slots: currentTaskState.slots || {},
+      hero: currentTaskState.hero || {}
+    });
+
+    initDaySelection();
+  }
+}
+
 function updateClock() {
   const now = getISTDate();
 
@@ -2068,9 +2139,6 @@ function updateClock() {
 
   checkMidnightReset();
 }
-
-updateClock();
-setInterval(updateClock, 1000);
 
 // ============================================= //
 // DAY NAVIGATION (Only shows selected day)      //
@@ -2148,40 +2216,6 @@ function getTodayDateKey() {
   return `date_${now.getFullYear()}_${now.getMonth()}_${now.getDate()}`;
 }
 
-// ============================================= //
-// CHECKLIST DEFINITION & DATA STORE             //
-// ============================================= //
-const TASK_KEYS = ['gym', 'leetcode', 'java', 'ml', 'revision', 'project', 'reading', 'sleep'];
-
-const dailyGoalsList = [
-  { id: 'gym', label: 'Gym (5:00 - 8:00 AM)' },
-  { id: 'leetcode', label: '1-2 LeetCode / HackerRank problems' },
-  { id: 'java', label: 'Java / DSA practice' },
-  { id: 'ml', label: 'Machine Learning study (1.5 - 2 hrs)' },
-  { id: 'revision', label: 'Attend college & revise subjects' },
-  { id: 'project', label: 'Project / personal development' },
-  { id: 'reading', label: 'Read / learn something new' },
-  { id: 'sleep', label: 'Maintain 7+ hrs sleep' }
-];
-
-let currentTaskState = {
-  gym: false,
-  leetcode: false,
-  java: false,
-  ml: false,
-  revision: false,
-  project: false,
-  reading: false,
-  sleep: false,
-  dailyProgress: 0,
-  weeklyProgress: 0,
-  streak: 0,
-  lastCompletedDate: null,
-  tasksDate: getISTDateString(),
-  weeklyHistory: {},
-  slots: {},
-  hero: {}
-};
 
 // ============================================= //
 // LOCAL STORAGE FALLBACK HELPERS                //
@@ -2452,56 +2486,6 @@ async function recalculateAndSave() {
   });
 }
 
-// ============================================= //
-// AUTO RESET AT IST MIDNIGHT                    //
-// ============================================= //
-function checkMidnightReset() {
-  const todayStr = getISTDateString();
-  if (currentTaskState.tasksDate && currentTaskState.tasksDate !== todayStr) {
-    TASK_KEYS.forEach(k => {
-      currentTaskState[k] = false;
-    });
-    currentTaskState.dailyProgress = 0;
-    currentTaskState.tasksDate = todayStr;
-
-    const yesterdayStr = getISTYesterdayString();
-    if (currentTaskState.lastCompletedDate && currentTaskState.lastCompletedDate !== todayStr && currentTaskState.lastCompletedDate !== yesterdayStr) {
-      currentTaskState.streak = 0;
-    }
-
-    TASK_KEYS.forEach(k => {
-      const chk = document.getElementById('goal_' + k);
-      if (chk) {
-        chk.checked = false;
-        const item = chk.closest('.tracker-item');
-        if (item) item.classList.remove('completed');
-      }
-    });
-
-    updateProgressUI();
-
-    saveTasks({
-      gym: false,
-      leetcode: false,
-      java: false,
-      ml: false,
-      revision: false,
-      project: false,
-      reading: false,
-      sleep: false,
-      dailyProgress: 0,
-      weeklyProgress: currentTaskState.weeklyProgress,
-      streak: currentTaskState.streak,
-      lastCompletedDate: currentTaskState.lastCompletedDate,
-      tasksDate: todayStr,
-      weeklyHistory: currentTaskState.weeklyHistory,
-      slots: currentTaskState.slots,
-      hero: currentTaskState.hero
-    });
-
-    initDaySelection();
-  }
-}
 
 // ============================================= //
 // DAILY GOALS (Interactive Tracker)             //
@@ -2879,6 +2863,8 @@ loadExamCheckboxes();
 loadHeroChecklist();
 loadDarkMode();
 initDaySelection();
+updateClock();
+setInterval(updateClock, 1000);
 updateProgressUI();
 
 // Load tasks & setup realtime sync
